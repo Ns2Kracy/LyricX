@@ -3,16 +3,11 @@ import SwiftUI
 
 @main
 struct LyricXApp: App {
+    @State private var model = AppModel()
+
     var body: some Scene {
-        MenuBarExtra("LyricX", systemImage: "music.note") {
-            Text("LyricX")
-
-            Divider()
-
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q")
+        MenuBarExtra("LyricX", systemImage: model.menuBarSymbol) {
+            MenuBarContentView(model: model)
         }
         .menuBarExtraStyle(.menu)
     }
