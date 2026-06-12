@@ -11,6 +11,7 @@ struct LyricXUnitTests {
         try testTimelineReturnsNilBeforeFirstLine()
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
         try testTimelineReturnsNextLineAfterPosition()
+        try testLRCLIBLookupURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
     }
 
@@ -76,6 +77,26 @@ struct LyricXUnitTests {
         try expectNil(timeline.nextLine(after: 20.0))
     }
 
+    private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
+        let client = LRCLIBClient(baseURL: URL(string: "https://example.test")!)
+        let track = PlaybackTrack(
+            title: "Sweet / Song",
+            artist: "Artist & Friend",
+            album: "Album Name",
+            duration: 123.4
+        )
+        let url = client.lookupURL(for: track)
+        let components = try require(URLComponents(url: url, resolvingAgainstBaseURL: false), "URL should be parseable")
+
+        try expectEqual(components.scheme, "https")
+        try expectEqual(components.host, "example.test")
+        try expectEqual(components.path, "/api/get")
+        try expectEqual(queryValue("track_name", in: components), "Sweet / Song")
+        try expectEqual(queryValue("artist_name", in: components), "Artist & Friend")
+        try expectEqual(queryValue("album_name", in: components), "Album Name")
+        try expectEqual(queryValue("duration", in: components), "123")
+    }
+
     private static func expectEqual<T: Equatable>(_ actual: T, _ expected: T, file: StaticString = #file, line: UInt = #line) throws {
         guard actual == expected else {
             throw TestFailure(message: "Expected \(expected), got \(actual)", file: String(describing: file), line: line)
@@ -86,6 +107,17 @@ struct LyricXUnitTests {
         guard actual == nil else {
             throw TestFailure(message: "Expected nil, got \(String(describing: actual))", file: String(describing: file), line: line)
         }
+    }
+
+    private static func require<T>(_ value: T?, _ message: String, file: StaticString = #file, line: UInt = #line) throws -> T {
+        guard let value else {
+            throw TestFailure(message: message, file: String(describing: file), line: line)
+        }
+        return value
+    }
+
+    private static func queryValue(_ name: String, in components: URLComponents) -> String? {
+        components.queryItems?.first { $0.name == name }?.value
     }
 }
 
