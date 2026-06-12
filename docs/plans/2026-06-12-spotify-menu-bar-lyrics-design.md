@@ -41,4 +41,4 @@ The SwiftUI `App` owns an observable `AppModel`. A `MenuBarExtra` exposes status
 
 ## Build Constraints
 
-The machine currently has Apple Swift 6.2.4 and the macOS 26.2 SDK through Command Line Tools, but no full Xcode app. The project should therefore build with `swift build` and include a small shell script to package the executable into a `.app` bundle.
+The machine currently has Apple Swift 6.2.4 and the macOS 26.2 SDK through Command Line Tools, but no full Xcode app. The project should therefore build with `swift build`, verify pure logic through an executable unit-test runner, and include a small shell script to package the executable into a `.app` bundle.
