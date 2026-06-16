@@ -14,6 +14,9 @@ struct LyricXUnitTests {
         try testMenuBarMarqueeKeepsShortTextWhole()
         try testMenuBarMarqueeReturnsFixedWindowForLongText()
         try testMenuBarMarqueeReturnsTimedWindowForLongLyric()
+        try testSpotifyControlScriptForPlayPause()
+        try testSpotifyControlScriptForNextTrack()
+        try testSpotifyControlScriptForPreviousTrack()
         try testLRCLIBLookupURLEncodesTrackQuery()
         try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
@@ -101,6 +104,18 @@ struct LyricXUnitTests {
         try expectEqual(marquee.displayText("abcdefghij", progress: 0.0), "abcdef")
         try expectEqual(marquee.displayText("abcdefghij", progress: 0.5), "cdefgh")
         try expectEqual(marquee.displayText("abcdefghij", progress: 1.0), "efghij")
+    }
+
+    private static func testSpotifyControlScriptForPlayPause() throws {
+        try expectEqual(SpotifyPlayerCommand.playPause.appleScript, "tell application \"Spotify\" to playpause")
+    }
+
+    private static func testSpotifyControlScriptForNextTrack() throws {
+        try expectEqual(SpotifyPlayerCommand.nextTrack.appleScript, "tell application \"Spotify\" to next track")
+    }
+
+    private static func testSpotifyControlScriptForPreviousTrack() throws {
+        try expectEqual(SpotifyPlayerCommand.previousTrack.appleScript, "tell application \"Spotify\" to previous track")
     }
 
     private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
