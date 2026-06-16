@@ -7,10 +7,13 @@ struct MenuBarContentView: View {
 
     let model: AppModel
 
+    private let elapsedTimeColumnWidth: CGFloat = 30
+    private let remainingTimeColumnWidth: CGFloat = 36
+
     var body: some View {
         nowPlayingPanel
-            .padding(10)
-            .frame(width: 250, height: 125)
+            .padding(12)
+            .frame(width: 300, height: 150)
     }
 
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, Bool>) -> Binding<Bool> {
@@ -25,10 +28,10 @@ struct MenuBarContentView: View {
             ArtworkView(
                 artwork: model.artwork,
                 fallbackTitle: model.playback.track?.album ?? "LyricX",
-                size: 96
+                size: 120
             )
 
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 4) {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(model.playback.track?.title ?? "No Spotify Track")
@@ -46,57 +49,78 @@ struct MenuBarContentView: View {
                     utilityMenu
                 }
 
-                HStack(spacing: 14) {
-                    Button {
-                        model.previousTrack()
-                    } label: {
-                        Label("Previous Track", systemImage: "backward.fill")
-                            .labelStyle(.iconOnly)
-                            .font(.callout)
-                    }
-                    .disabled(!canControlPlayback)
-                    .help("Previous Track")
-
-                    Button {
-                        model.playPause()
-                    } label: {
-                        Label(playPauseTitle, systemImage: playPauseIcon)
-                            .labelStyle(.iconOnly)
-                            .font(.system(size: 22, weight: .semibold))
-                    }
-                    .disabled(!canControlPlayback)
-                    .help(playPauseTitle)
-
-                    Button {
-                        model.nextTrack()
-                    } label: {
-                        Label("Next Track", systemImage: "forward.fill")
-                            .labelStyle(.iconOnly)
-                            .font(.callout)
-                    }
-                    .disabled(!canControlPlayback)
-                    .help("Next Track")
-                }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .center)
-
-                VStack(spacing: 3) {
-                    ProgressView(value: progressValue)
-                        .progressViewStyle(.linear)
-
-                    HStack {
-                        Text(formatTime(model.playback.position))
-
-                        Spacer()
-
-                        Text(remainingTimeText)
-                    }
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                }
+                Spacer(minLength: 0)
+                playbackToolbar
+                Spacer(minLength: 0)
+                progressBlock
             }
+            .frame(height: 120)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var playbackToolbar: some View {
+        ZStack {
+            HStack(spacing: 0) {
+                Button {
+                    model.previousTrack()
+                } label: {
+                    Label("Previous Track", systemImage: "backward.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .disabled(!canControlPlayback)
+                .help("Previous Track")
+                .frame(width: elapsedTimeColumnWidth, alignment: .trailing)
+
+                Spacer(minLength: 0)
+
+                Button {
+                    model.nextTrack()
+                } label: {
+                    Label("Next Track", systemImage: "forward.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .disabled(!canControlPlayback)
+                .help("Next Track")
+                .frame(width: remainingTimeColumnWidth, alignment: .leading)
+            }
+
+            Button {
+                model.playPause()
+            } label: {
+                Label(playPauseTitle, systemImage: playPauseIcon)
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 23, weight: .semibold))
+            }
+            .disabled(!canControlPlayback)
+            .help(playPauseTitle)
+            .frame(width: 32, alignment: .center)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var progressBlock: some View {
+        VStack(spacing: 4) {
+            ProgressView(value: progressValue)
+                .progressViewStyle(.linear)
+                .controlSize(.mini)
+
+            HStack {
+                Text(formatTime(model.playback.position))
+                    .frame(width: elapsedTimeColumnWidth, alignment: .trailing)
+
+                Spacer()
+
+                Text(remainingTimeText)
+                    .frame(width: remainingTimeColumnWidth, alignment: .trailing)
+            }
+            .font(.system(size: 10, weight: .regular, design: .monospaced))
+            .foregroundStyle(.secondary)
+        }
     }
 
     private var utilityMenu: some View {
@@ -105,12 +129,6 @@ struct MenuBarContentView: View {
                 openAppWindow(id: "main")
             } label: {
                 Label("Open LyricX", systemImage: "rectangle.on.rectangle")
-            }
-
-            Button {
-                openAppWindow(id: "settings")
-            } label: {
-                Label("Settings", systemImage: "gearshape")
             }
 
             Button {

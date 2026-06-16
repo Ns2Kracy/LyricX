@@ -6,6 +6,21 @@ struct MainWindowView: View {
     @Bindable var model: AppModel
 
     var body: some View {
+        TabView {
+            nowPlaying
+                .tabItem {
+                    Label("Now Playing", systemImage: "music.note")
+                }
+
+            SettingsView(model: model)
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
+        }
+        .frame(minWidth: 620, idealWidth: 700, minHeight: 520, idealHeight: 560)
+    }
+
+    private var nowPlaying: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
 
@@ -17,7 +32,6 @@ struct MainWindowView: View {
 
             footer
         }
-        .frame(minWidth: 560, idealWidth: 640, minHeight: 420, idealHeight: 460)
     }
 
     private var header: some View {

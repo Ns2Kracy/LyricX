@@ -12,11 +12,6 @@ struct LyricXApp: App {
         }
         .defaultSize(width: 640, height: 460)
 
-        WindowGroup("Settings", id: "settings") {
-            SettingsView(model: container.model)
-        }
-        .defaultSize(width: 560, height: 540)
-
         MenuBarExtra {
             MenuBarContentView(model: container.model)
         } label: {
