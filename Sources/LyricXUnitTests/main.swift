@@ -22,6 +22,9 @@ struct LyricXUnitTests {
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetCodableRoundTrip()
         try testStylePresetStoreSavesAndLoadsSelection()
+        try testAppVersionComparisonFindsNewerPatch()
+        try testAppVersionIgnoresLeadingV()
+        try testGitHubReleaseDecoderFindsPackageAsset()
         try testLRCLIBLookupURLEncodesTrackQuery()
         try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
@@ -165,6 +168,40 @@ struct LyricXUnitTests {
         try? FileManager.default.removeItem(at: url)
         try expectEqual(loaded.activePresetID, preset.id)
         try expectEqual(loaded.presets, LyricStylePreset.defaults)
+    }
+
+    private static func testAppVersionComparisonFindsNewerPatch() throws {
+        try expectEqual(AppVersion("0.1.2") > AppVersion("0.1.1"), true)
+    }
+
+    private static func testAppVersionIgnoresLeadingV() throws {
+        try expectEqual(AppVersion("v0.1.2"), AppVersion("0.1.2"))
+    }
+
+    private static func testGitHubReleaseDecoderFindsPackageAsset() throws {
+        let data = Data(#"""
+        {
+          "tag_name": "v0.1.2",
+          "html_url": "https://github.com/ns2kracy/LyricX/releases/tag/v0.1.2",
+          "assets": [
+            {
+              "name": "LyricX.zip",
+              "browser_download_url": "https://github.com/ns2kracy/LyricX/releases/download/v0.1.2/LyricX.zip"
+            },
+            {
+              "name": "LyricX.zip.sha256",
+              "browser_download_url": "https://github.com/ns2kracy/LyricX/releases/download/v0.1.2/LyricX.zip.sha256"
+            }
+          ]
+        }
+        """#.utf8)
+
+        let update = try GitHubReleaseUpdateService.decodeRelease(data: data)
+
+        try expectEqual(update.version, AppVersion("0.1.2"))
+        try expectEqual(update.pageURL.absoluteString, "https://github.com/ns2kracy/LyricX/releases/tag/v0.1.2")
+        try expectEqual(update.packageURL?.absoluteString, "https://github.com/ns2kracy/LyricX/releases/download/v0.1.2/LyricX.zip")
+        try expectEqual(update.checksumURL?.absoluteString, "https://github.com/ns2kracy/LyricX/releases/download/v0.1.2/LyricX.zip.sha256")
     }
 
     private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
