@@ -21,6 +21,7 @@ struct LyricXUnitTests {
         try testTrackArtworkStoresPNGData()
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetCodableRoundTrip()
+        try testStylePresetStoreSavesAndLoadsSelection()
         try testLRCLIBLookupURLEncodesTrackQuery()
         try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
@@ -151,6 +152,19 @@ struct LyricXUnitTests {
         let decoded = try JSONDecoder().decode(LyricStylePreset.self, from: data)
 
         try expectEqual(decoded, preset)
+    }
+
+    private static func testStylePresetStoreSavesAndLoadsSelection() throws {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        let store = LyricStylePresetStore(fileURL: url)
+        let preset = LyricStylePreset.defaults[1]
+
+        try store.save(presets: LyricStylePreset.defaults, activePresetID: preset.id)
+        let loaded = try store.load()
+
+        try? FileManager.default.removeItem(at: url)
+        try expectEqual(loaded.activePresetID, preset.id)
+        try expectEqual(loaded.presets, LyricStylePreset.defaults)
     }
 
     private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
