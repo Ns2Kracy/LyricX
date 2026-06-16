@@ -11,10 +11,17 @@ final class AppModel {
     var currentLine: LyricLine?
     var nextLine: LyricLine?
     var lyricsStatus = "Waiting for Spotify"
+    var stylePresets = LyricStylePreset.defaults
+    var activeStylePresetID = LyricStylePreset.defaults[0].id
+    var latestUpdate: AppUpdate?
+    var updateStatus = "Updates not checked"
+    var isMainWindowRequested = false
     var displayTick = 0
 
     @ObservationIgnored private let playbackService: SpotifyPlaybackService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
+    @ObservationIgnored private let presetStore: LyricStylePresetStore
+    @ObservationIgnored private let updateService: any UpdateService
     @ObservationIgnored private let marquee = MenuBarMarquee(visibleCharacters: 28)
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var displayRefreshTask: Task<Void, Never>?
@@ -29,6 +36,10 @@ final class AppModel {
     var showsTrackWhenLyricsMissing: Bool {
         get { settings.showsTrackWhenLyricsMissing }
         set { settings.showsTrackWhenLyricsMissing = newValue }
+    }
+
+    var activeStylePreset: LyricStylePreset {
+        stylePresets.first { $0.id == activeStylePresetID } ?? LyricStylePreset.defaults[0]
     }
 
     var menuBarSymbol: String {
@@ -95,10 +106,19 @@ final class AppModel {
 
     init(
         playbackService: SpotifyPlaybackService = SpotifyPlaybackService(),
-        lyricsRepository: LyricsRepository = LyricsRepository()
+        lyricsRepository: LyricsRepository = LyricsRepository(),
+        presetStore: LyricStylePresetStore = LyricStylePresetStore(fileURL: AppModel.defaultPresetStoreURL()),
+        updateService: any UpdateService = GitHubReleaseUpdateService(
+            owner: "ns2kracy",
+            repository: "LyricX",
+            currentVersion: AppModel.currentAppVersion()
+        )
     ) {
         self.playbackService = playbackService
         self.lyricsRepository = lyricsRepository
+        self.presetStore = presetStore
+        self.updateService = updateService
+        loadPresetState()
         startPolling()
         startDisplayRefresh()
     }
@@ -143,6 +163,53 @@ final class AppModel {
         Task { [weak self] in
             await self?.loadLyrics(for: track, bypassCache: true)
         }
+    }
+
+    func playPause() {
+        runPlayerCommand { service in
+            service.playPause()
+        }
+    }
+
+    func nextTrack() {
+        runPlayerCommand { service in
+            service.nextTrack()
+        }
+    }
+
+    func previousTrack() {
+        runPlayerCommand { service in
+            service.previousTrack()
+        }
+    }
+
+    func checkForUpdates() {
+        updateStatus = "Checking for updates..."
+        let service = updateService
+
+        Task { [weak self, service] in
+            do {
+                let update = try await service.latestVersion()
+                await MainActor.run {
+                    self?.latestUpdate = update
+                    if let update {
+                        self?.updateStatus = "LyricX \(update.version) is available"
+                    } else {
+                        self?.updateStatus = "LyricX is up to date"
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self?.updateStatus = "Update check failed: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    func selectPreset(_ preset: LyricStylePreset) {
+        activeStylePresetID = preset.id
+        showsTrackWhenLyricsMissing = preset.showsTrackWhenLyricsMissing
+        persistPresetState()
     }
 
     private func pollOnce() async {
@@ -230,5 +297,41 @@ final class AppModel {
     private func nonBlank(_ text: String?) -> String? {
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func runPlayerCommand(_ command: @escaping @Sendable (SpotifyPlaybackService) -> Void) {
+        let service = playbackService
+        Task { [weak self] in
+            await Task.detached {
+                command(service)
+            }.value
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            await self?.pollOnce()
+        }
+    }
+
+    private func loadPresetState() {
+        let state = (try? presetStore.load()) ?? LyricStylePresetStore.defaultState
+        stylePresets = state.presets.isEmpty ? LyricStylePreset.defaults : state.presets
+        activeStylePresetID = stylePresets.contains { $0.id == state.activePresetID }
+            ? state.activePresetID
+            : stylePresets[0].id
+        showsTrackWhenLyricsMissing = activeStylePreset.showsTrackWhenLyricsMissing
+    }
+
+    private func persistPresetState() {
+        try? presetStore.save(presets: stylePresets, activePresetID: activeStylePresetID)
+    }
+
+    private static func defaultPresetStoreURL() -> URL {
+        let baseURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return baseURL
+            .appendingPathComponent("LyricX", isDirectory: true)
+            .appendingPathComponent("style-presets.json")
+    }
+
+    private static func currentAppVersion() -> AppVersion {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0"
+        return AppVersion(version)
     }
 }
