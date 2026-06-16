@@ -10,16 +10,12 @@ struct LyricXApp: App {
         MenuBarExtra {
             MenuBarContentView(model: container.model)
         } label: {
-            HStack(spacing: 4) {
-                if container.model.shouldShowMenuBarIcon {
-                    Image(systemName: container.model.menuBarSymbol)
-                }
-                Text(container.model.menuBarDisplayText)
-                    .font(.system(size: 13, weight: .medium))
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
+            TimelineView(.periodic(from: Date(timeIntervalSinceReferenceDate: 0), by: 1.0 / 30.0)) { context in
+                MenuBarLabelView(
+                    presentation: container.model.menuBarPresentation(at: context.date),
+                    date: context.date
+                )
             }
-            .accessibilityLabel(container.model.menuBarText)
         }
         .menuBarExtraStyle(.menu)
     }

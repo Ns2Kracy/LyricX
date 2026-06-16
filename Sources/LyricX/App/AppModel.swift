@@ -11,12 +11,13 @@ final class AppModel {
     var currentLine: LyricLine?
     var nextLine: LyricLine?
     var lyricsStatus = "Waiting for Spotify"
-    var marqueeTick = 0
 
     @ObservationIgnored private let playbackService: SpotifyPlaybackService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
+    @ObservationIgnored private let lyricSegmenter = MenuBarLyricSegmenter(visibleCharacters: 28)
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var lastLyricsTrack: PlaybackTrack?
+    @ObservationIgnored private var playbackUpdatedAt = Date()
 
     var isLyricsVisible: Bool {
         get { settings.showsLyrics }
@@ -33,27 +34,11 @@ final class AppModel {
     }
 
     var shouldShowMenuBarIcon: Bool {
-        nonBlank(currentLine?.text) == nil && (playback.track == nil || !showsTrackWhenLyricsMissing)
+        menuBarPresentation().symbol != nil
     }
 
     var menuBarText: String {
-        guard isLyricsVisible else {
-            return "LyricX"
-        }
-
-        if let lyric = nonBlank(currentLine?.text) {
-            return lyric
-        }
-
-        if let track = playback.track, showsTrackWhenLyricsMissing {
-            return "\(track.title) - \(track.artist)"
-        }
-
-        return lyricsStatus
-    }
-
-    var menuBarDisplayText: String {
-        marquee(menuBarText, visibleCharacters: 28, offset: marqueeTick)
+        menuBarPresentation().accessibilityText
     }
 
     var trackSummary: String {
@@ -61,6 +46,50 @@ final class AppModel {
             return playback.message ?? "Waiting for Spotify"
         }
         return "\(track.title) - \(track.artist)"
+    }
+
+    func menuBarPresentation(at date: Date = Date()) -> MenuBarPresentation {
+        guard isLyricsVisible else {
+            return MenuBarPresentation(
+                text: "LyricX",
+                accessibilityText: "LyricX",
+                symbol: menuBarSymbol,
+                behavior: .staticText
+            )
+        }
+
+        let position = estimatedPlaybackPosition(at: date)
+        if let line = timeline?.currentLine(at: position), let lyric = nonBlank(line.text) {
+            let normalizedLine = LyricLine(time: line.time, text: lyric)
+            let displayText = lyricSegmenter.displayText(
+                for: normalizedLine,
+                nextLine: timeline?.nextLine(after: position),
+                position: position
+            )
+            return MenuBarPresentation(
+                text: displayText,
+                accessibilityText: lyric,
+                symbol: nil,
+                behavior: .staticText
+            )
+        }
+
+        if let track = playback.track, showsTrackWhenLyricsMissing {
+            let title = "\(track.title) - \(track.artist)"
+            return MenuBarPresentation(
+                text: title,
+                accessibilityText: title,
+                symbol: nil,
+                behavior: title.count > 28 ? .marquee : .staticText
+            )
+        }
+
+        return MenuBarPresentation(
+            text: lyricsStatus,
+            accessibilityText: lyricsStatus,
+            symbol: menuBarSymbol,
+            behavior: lyricsStatus.count > 28 ? .marquee : .staticText
+        )
     }
 
     init(
@@ -84,7 +113,6 @@ final class AppModel {
         pollingTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.pollOnce()
-                self?.marqueeTick += 1
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
         }
@@ -108,6 +136,7 @@ final class AppModel {
         }.value
 
         playback = snapshot
+        playbackUpdatedAt = Date()
 
         guard let track = snapshot.track else {
             lastLyricsTrack = nil
@@ -152,15 +181,16 @@ final class AppModel {
         nextLine = timeline?.nextLine(after: position)
     }
 
-    private func marquee(_ text: String, visibleCharacters: Int, offset: Int) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count > visibleCharacters else {
-            return trimmed
+    private func estimatedPlaybackPosition(at date: Date) -> TimeInterval {
+        guard playback.isPlaying else {
+            return playback.position
         }
 
-        let padded = Array(trimmed + "    ")
-        let start = offset % padded.count
-        return String((0..<visibleCharacters).map { padded[(start + $0) % padded.count] })
+        let estimatedPosition = playback.position + max(0, date.timeIntervalSince(playbackUpdatedAt))
+        if let duration = playback.track?.duration {
+            return min(estimatedPosition, duration)
+        }
+        return estimatedPosition
     }
 
     private func nonBlank(_ text: String?) -> String? {

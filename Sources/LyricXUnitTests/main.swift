@@ -11,6 +11,9 @@ struct LyricXUnitTests {
         try testTimelineReturnsNilBeforeFirstLine()
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
         try testTimelineReturnsNextLineAfterPosition()
+        try testSplitsLongMenuBarLyricOnWordBoundaries()
+        try testSplitsLongMenuBarLyricWithoutSpaces()
+        try testMenuBarLyricSegmentAdvancesWithinLineDuration()
         try testLRCLIBLookupURLEncodesTrackQuery()
         try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
@@ -76,6 +79,32 @@ struct LyricXUnitTests {
 
         try expectEqual(timeline.nextLine(after: 10.0), LyricLine(time: 20.0, text: "Second"))
         try expectNil(timeline.nextLine(after: 20.0))
+    }
+
+    private static func testSplitsLongMenuBarLyricOnWordBoundaries() throws {
+        let segments = MenuBarLyricSegmenter(visibleCharacters: 18).segments(
+            for: "This is a very long lyric line for display"
+        )
+
+        try expectEqual(segments, ["This is a very", "long lyric line", "for display"])
+    }
+
+    private static func testSplitsLongMenuBarLyricWithoutSpaces() throws {
+        let segments = MenuBarLyricSegmenter(visibleCharacters: 5).segments(
+            for: "abcdefghijkl"
+        )
+
+        try expectEqual(segments, ["abcde", "fghij", "kl"])
+    }
+
+    private static func testMenuBarLyricSegmentAdvancesWithinLineDuration() throws {
+        let segmenter = MenuBarLyricSegmenter(visibleCharacters: 10)
+        let current = LyricLine(time: 10.0, text: "abcdefghij klmnopqrst uvwxyz")
+        let next = LyricLine(time: 16.0, text: "Next")
+
+        try expectEqual(segmenter.displayText(for: current, nextLine: next, position: 10.0), "abcdefghij")
+        try expectEqual(segmenter.displayText(for: current, nextLine: next, position: 12.1), "klmnopqrst")
+        try expectEqual(segmenter.displayText(for: current, nextLine: next, position: 14.1), "uvwxyz")
     }
 
     private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
