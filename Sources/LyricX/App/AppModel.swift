@@ -15,7 +15,6 @@ final class AppModel {
 
     @ObservationIgnored private let playbackService: SpotifyPlaybackService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
-    @ObservationIgnored private let lyricSegmenter = MenuBarLyricSegmenter(visibleCharacters: 28)
     @ObservationIgnored private let marquee = MenuBarMarquee(visibleCharacters: 28)
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var displayRefreshTask: Task<Void, Never>?
@@ -65,17 +64,12 @@ final class AppModel {
 
         let position = estimatedPlaybackPosition(at: date)
         if let line = timeline?.currentLine(at: position), let lyric = nonBlank(line.text) {
-            let normalizedLine = LyricLine(time: line.time, text: lyric)
-            let displayText = lyricSegmenter.displayText(
-                for: normalizedLine,
-                nextLine: timeline?.nextLine(after: position),
-                position: position
-            )
+            let isMarquee = lyric.count > marquee.visibleCharacters
             return MenuBarPresentation(
-                text: displayText,
+                text: isMarquee ? marquee.displayText(lyric, progress: lyricProgress(for: line, at: position)) : lyric,
                 accessibilityText: lyric,
                 symbol: nil,
-                behavior: .staticText
+                behavior: isMarquee ? .marquee : .staticText
             )
         }
 
@@ -213,6 +207,24 @@ final class AppModel {
             return min(estimatedPosition, duration)
         }
         return estimatedPosition
+    }
+
+    private func lyricProgress(for line: LyricLine, at position: TimeInterval) -> Double {
+        let endTime = nextLineEndTime(for: line, at: position)
+        let duration = max(endTime - line.time, 0.5)
+        return min(max((position - line.time) / duration, 0), 1)
+    }
+
+    private func nextLineEndTime(for line: LyricLine, at position: TimeInterval) -> TimeInterval {
+        if let nextLine = timeline?.nextLine(after: position) {
+            return nextLine.time
+        }
+
+        if let duration = playback.track?.duration, duration > line.time {
+            return duration
+        }
+
+        return line.time + 6.0
     }
 
     private func nonBlank(_ text: String?) -> String? {

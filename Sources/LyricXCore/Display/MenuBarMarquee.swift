@@ -19,4 +19,17 @@ public struct MenuBarMarquee: Sendable {
         let start = offset % padded.count
         return String((0..<visibleCharacters).map { padded[(start + $0) % padded.count] })
     }
+
+    public func displayText(_ text: String, progress: Double) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > visibleCharacters else {
+            return trimmed
+        }
+
+        let characters = Array(trimmed)
+        let maxStart = characters.count - visibleCharacters
+        let clampedProgress = min(max(progress, 0), 1)
+        let start = min(Int((Double(maxStart) * clampedProgress).rounded(.down)), maxStart)
+        return String(characters[start..<(start + visibleCharacters)])
+    }
 }
