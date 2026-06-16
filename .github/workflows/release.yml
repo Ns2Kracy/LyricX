@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: macos-26
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Run unit tests
+        run: swift run LyricXUnitTests
+
+      - name: Build app bundle
+        run: bash scripts/build-app.sh
+
+      - name: Package release assets
+        run: bash scripts/package-release.sh
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/LyricX.zip dist/LyricX.zip.sha256 --generate-notes

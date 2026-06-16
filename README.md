@@ -1,20 +1,36 @@
 # LyricX
 
-LyricX is a macOS menu-bar app that shows synced Spotify lyrics directly in the macOS menu bar, similar to desktop lyric modes in NetEase or QQ Music.
+LyricX is a macOS menu-bar app that shows synced Spotify lyrics directly in the menu bar, similar to the desktop lyric modes in NetEase Cloud Music or QQ Music.
+
+It is built with SwiftUI and Swift Package Manager. The repository does not require a generated Xcode project for normal build, test, or packaging tasks.
+
+## Features
+
+- Shows the current synced lyric line in the macOS menu bar.
+- Falls back to the current Spotify track name when synced lyrics are missing.
+- Hides the menu-bar icon when lyric or track text is available, and shows the icon only as the empty-state fallback.
+- Reads local Spotify playback state through AppleScript.
+- Fetches synced lyrics from LRCLIB and caches them in Application Support.
 
 ## Requirements
 
 - macOS 14 or newer
 - Apple Swift 6.2 or newer
 - Spotify for macOS installed
-- Internet access for LRCLIB synced lyric lookup
+- Internet access for LRCLIB lyric lookup
 
-This repo is set up for a Command Line Tools-only environment. It does not require a full Xcode project to build.
+## Quick Start
 
-## Build
+Build the Swift package:
 
 ```bash
 swift build
+```
+
+Run the logic test executable:
+
+```bash
+swift run LyricXUnitTests
 ```
 
 Create a runnable app bundle:
@@ -23,15 +39,67 @@ Create a runnable app bundle:
 bash scripts/build-app.sh
 ```
 
-The bundle is written to `dist/LyricX.app`.
-
-## Run
+Launch the app:
 
 ```bash
 open dist/LyricX.app
 ```
 
-LyricX runs as a menu-bar-only app. The menu-bar item itself displays the current lyric line when synced lyrics are available. Use the menu to show or hide lyric text, show the track name when lyrics are missing, refresh lyrics, or quit.
+LyricX is menu-bar-only. Open the menu-bar item to refresh lyrics, toggle lyric text, show the track name when lyrics are missing, or quit.
+
+## Commands
+
+| Command | Description |
+| --- | --- |
+| `swift build` | Build all SwiftPM targets in debug mode. |
+| `swift run LyricXUnitTests` | Run the executable unit test suite. |
+| `bash scripts/build-app.sh` | Build `dist/LyricX.app` in release mode. |
+| `bash scripts/package-release.sh` | Package `dist/LyricX.app` as `dist/LyricX.zip` and write `dist/LyricX.zip.sha256`. |
+
+## Packaging
+
+Create a local release package with:
+
+```bash
+bash scripts/build-app.sh
+bash scripts/package-release.sh
+```
+
+The packaged files are written to:
+
+- `dist/LyricX.zip`
+- `dist/LyricX.zip.sha256`
+
+The app is currently unsigned. If macOS Gatekeeper blocks a downloaded build, users may need to remove quarantine manually or open it through Finder's context menu. Code signing and notarization can be added later once a Developer ID certificate is available.
+
+## GitHub CI/CD
+
+The repository includes two GitHub Actions workflows:
+
+- `.github/workflows/ci.yml` runs on pull requests and pushes to `main`.
+- `.github/workflows/release.yml` runs when a tag matching `v*` is pushed.
+
+CI runs these gates on the macOS runner:
+
+1. `swift run LyricXUnitTests`
+2. `swift build`
+3. `bash scripts/build-app.sh`
+4. `bash scripts/package-release.sh`
+
+The CI workflow uploads `LyricX.zip` and `LyricX.zip.sha256` as a build artifact.
+
+## Release
+
+Create and publish a GitHub release by pushing a version tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow builds the app, packages the zip and checksum, then creates a GitHub Release with generated notes.
+
+The workflow uses the default `GITHUB_TOKEN` with `contents: write` permission. No additional repository secrets are required for unsigned releases.
 
 ## Spotify Permissions
 
@@ -39,12 +107,24 @@ LyricX reads the local Spotify desktop app with AppleScript through `/usr/bin/os
 
 ## Lyrics
 
-Spotify playback state comes from the local Spotify app. Synced lyrics come from LRCLIB and are cached under Application Support. LyricX tries LRCLIB exact lookup first, then LRCLIB search. If LRCLIB does not have synced lyrics for the current track, LyricX keeps polling Spotify and shows the track name or a visible `No synced lyrics for <track>` state.
+Spotify playback state comes from the local Spotify app. Synced lyrics come from LRCLIB and are cached under Application Support. LyricX tries LRCLIB exact lookup first, then LRCLIB search.
 
-## Test
+If LRCLIB does not have synced lyrics for the current track, LyricX keeps polling Spotify and shows the track name or a visible `No synced lyrics for <track>` state.
 
-This Command Line Tools install does not expose Swift Testing or XCTest to SwiftPM, so pure logic tests run through a small executable test target:
+## Project Layout
 
-```bash
-swift run LyricXUnitTests
+```text
+Sources/LyricX/          SwiftUI menu-bar app target
+Sources/LyricXCore/      Playback, lyric lookup, parsing, and caching logic
+Sources/LyricXUnitTests/ Executable test target for Command Line Tools environments
+scripts/build-app.sh     Release app bundle builder
+scripts/package-release.sh Release zip and checksum packager
+.github/workflows/      CI and GitHub Release automation
 ```
+
+## Troubleshooting
+
+- Spotify must be installed, running, and playing a track for live playback state.
+- macOS Automation permission is required before LyricX can read Spotify state.
+- Some tracks do not have synced lyrics in LRCLIB; LyricX falls back to track text in that case.
+- The app bundle in `dist/` is generated output and is intentionally not committed.
