@@ -212,6 +212,19 @@ final class AppModel {
         persistPresetState()
     }
 
+    func updatePreset(_ preset: LyricStylePreset) {
+        if let index = stylePresets.firstIndex(where: { $0.id == preset.id }) {
+            stylePresets[index] = preset
+        } else {
+            stylePresets.append(preset)
+        }
+
+        if preset.id == activeStylePresetID {
+            showsTrackWhenLyricsMissing = preset.showsTrackWhenLyricsMissing
+        }
+        persistPresetState()
+    }
+
     private func pollOnce() async {
         let service = playbackService
         let snapshot = await Task.detached {
