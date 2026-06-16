@@ -22,6 +22,6 @@ struct LyricXApp: App {
         } label: {
             MenuBarLabelView(presentation: container.model.menuBarPresentation())
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
     }
 }

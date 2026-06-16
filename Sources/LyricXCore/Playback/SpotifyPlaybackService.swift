@@ -2,13 +2,24 @@ import Foundation
 
 public struct SpotifyPlaybackService: Sendable {
     private let runScript: @Sendable (String) throws -> String
+    private let fetchArtwork: @Sendable (URL) async throws -> (Data, String?)
 
     public init() {
         self.runScript = Self.defaultRunAppleScript
+        self.fetchArtwork = Self.defaultFetchArtwork
     }
 
     public init(runScript: @escaping @Sendable (String) throws -> String) {
         self.runScript = runScript
+        self.fetchArtwork = Self.defaultFetchArtwork
+    }
+
+    public init(
+        runScript: @escaping @Sendable (String) throws -> String,
+        fetchArtwork: @escaping @Sendable (URL) async throws -> (Data, String?)
+    ) {
+        self.runScript = runScript
+        self.fetchArtwork = fetchArtwork
     }
 
     public func currentSnapshot() -> PlaybackSnapshot {
@@ -41,11 +52,13 @@ public struct SpotifyPlaybackService: Sendable {
             let rawDuration = TimeInterval(lines[4])
             let duration = rawDuration.map { $0 > 10_000 ? $0 / 1_000 : $0 }
             let position = TimeInterval(lines[5]) ?? 0
+            let artworkURL = lines.indices.contains(6) ? lines[6].nilIfBlank.flatMap(URL.init(string:)) : nil
             let track = PlaybackTrack(
                 title: lines[1],
                 artist: lines[2],
                 album: lines[3],
-                duration: duration
+                duration: duration,
+                artworkURL: artworkURL
             )
             return PlaybackSnapshot(
                 state: stateLine == "playing" ? .playing : .paused,
@@ -80,6 +93,11 @@ public struct SpotifyPlaybackService: Sendable {
         throw SpotifyPlaybackError.scriptFailed(errorOutput?.nilIfBlank ?? "osascript exited with status \(process.terminationStatus)")
     }
 
+    private static func defaultFetchArtwork(from url: URL) async throws -> (Data, String?) {
+        let (data, response) = try await URLSession.shared.data(from: url)
+        return (data, response.mimeType)
+    }
+
     private static let spotifyScript = """
     tell application "System Events"
         if not (exists process "Spotify") then
@@ -98,7 +116,11 @@ public struct SpotifyPlaybackService: Sendable {
         set albumName to album of current track
         set durationValue to duration of current track
         set positionValue to player position
-        return playbackState & linefeed & trackName & linefeed & artistName & linefeed & albumName & linefeed & durationValue & linefeed & positionValue
+        set artworkURLValue to ""
+        try
+            set artworkURLValue to artwork url of current track
+        end try
+        return playbackState & linefeed & trackName & linefeed & artistName & linefeed & albumName & linefeed & durationValue & linefeed & positionValue & linefeed & artworkURLValue
     end tell
     """
 }
@@ -122,8 +144,17 @@ extension SpotifyPlaybackService: PlayerService {
 }
 
 extension SpotifyPlaybackService: ArtworkProvider {
-    public func artwork(for _: PlaybackTrack) async -> TrackArtwork? {
-        nil
+    public func artwork(for track: PlaybackTrack) async -> TrackArtwork? {
+        guard let artworkURL = track.artworkURL else {
+            return nil
+        }
+
+        do {
+            let (data, mimeType) = try await fetchArtwork(artworkURL)
+            return TrackArtwork(data: data, mimeType: mimeType ?? "application/octet-stream")
+        } catch {
+            return nil
+        }
     }
 }
 

@@ -5,6 +5,7 @@ import SwiftUI
 struct ArtworkView: View {
     let artwork: TrackArtwork?
     let fallbackTitle: String
+    var size: CGFloat = 156
 
     private let cornerRadius: CGFloat = 8
 
@@ -32,7 +33,7 @@ struct ArtworkView: View {
                 }
             }
         }
-        .frame(width: 156, height: 156)
+        .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

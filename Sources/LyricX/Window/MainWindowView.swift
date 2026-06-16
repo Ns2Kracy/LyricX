@@ -22,7 +22,7 @@ struct MainWindowView: View {
 
     private var header: some View {
         HStack(alignment: .top, spacing: 20) {
-            ArtworkView(artwork: nil, fallbackTitle: model.playback.track?.album ?? "LyricX")
+            ArtworkView(artwork: model.artwork, fallbackTitle: model.playback.track?.album ?? "LyricX")
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 8) {

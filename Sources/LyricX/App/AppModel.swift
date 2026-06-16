@@ -10,6 +10,7 @@ final class AppModel {
     var timeline: LyricTimeline?
     var currentLine: LyricLine?
     var nextLine: LyricLine?
+    var artwork: TrackArtwork?
     var lyricsStatus = "Waiting for Spotify"
     var stylePresets = LyricStylePreset.defaults
     var activeStylePresetID = LyricStylePreset.defaults[0].id
@@ -25,6 +26,7 @@ final class AppModel {
     @ObservationIgnored private let marquee = MenuBarMarquee(visibleCharacters: 28)
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var displayRefreshTask: Task<Void, Never>?
+    @ObservationIgnored private var artworkTask: Task<Void, Never>?
     @ObservationIgnored private var lastLyricsTrack: PlaybackTrack?
     @ObservationIgnored private var playbackUpdatedAt = Date()
 
@@ -126,6 +128,7 @@ final class AppModel {
     deinit {
         pollingTask?.cancel()
         displayRefreshTask?.cancel()
+        artworkTask?.cancel()
     }
 
     func startPolling() {
@@ -239,6 +242,8 @@ final class AppModel {
             timeline = nil
             currentLine = nil
             nextLine = nil
+            artwork = nil
+            artworkTask?.cancel()
             lyricsStatus = snapshot.message ?? "Waiting for Spotify"
             return
         }
@@ -248,7 +253,9 @@ final class AppModel {
             timeline = nil
             currentLine = nil
             nextLine = nil
+            artwork = nil
             lyricsStatus = "Finding synced lyrics"
+            loadArtwork(for: track)
             await loadLyrics(for: track, bypassCache: false)
         }
 
@@ -270,6 +277,24 @@ final class AppModel {
             lyricsStatus = "Lyrics synced"
         }
         updateActiveLines(at: playback.position)
+    }
+
+    private func loadArtwork(for track: PlaybackTrack) {
+        artworkTask?.cancel()
+        let service = playbackService
+        artworkTask = Task { [weak self] in
+            let loadedArtwork = await service.artwork(for: track)
+            guard !Task.isCancelled else {
+                return
+            }
+
+            await MainActor.run {
+                guard self?.playback.track == track else {
+                    return
+                }
+                self?.artwork = loadedArtwork
+            }
+        }
     }
 
     private func updateActiveLines(at position: TimeInterval) {

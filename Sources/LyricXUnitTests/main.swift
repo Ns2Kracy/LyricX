@@ -3,7 +3,7 @@ import LyricXCore
 
 @main
 struct LyricXUnitTests {
-    static func main() throws {
+    static func main() async throws {
         try testParsesTimestampedLine()
         try testParsesMultipleTimestampsOnOneLine()
         try testIgnoresMetadataAndBlankLines()
@@ -18,6 +18,8 @@ struct LyricXUnitTests {
         try testSpotifyControlScriptForNextTrack()
         try testSpotifyControlScriptForPreviousTrack()
         try testSpotifyServiceRunsControlCommand()
+        try testSpotifyParseReadsArtworkURL()
+        try await testSpotifyArtworkProviderLoadsArtworkData()
         try testTrackArtworkStoresPNGData()
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetCodableRoundTrip()
@@ -133,6 +135,46 @@ struct LyricXUnitTests {
         service.nextTrack()
 
         try expectEqual(recorder.scripts, [SpotifyPlayerCommand.nextTrack.appleScript])
+    }
+
+    private static func testSpotifyParseReadsArtworkURL() throws {
+        let service = SpotifyPlaybackService(runScript: { _ in
+            """
+        playing
+        Aimai
+        9Lana
+        Aimai
+        220000
+        11
+        https://i.scdn.co/image/example
+        """
+        })
+        let snapshot = service.currentSnapshot()
+
+        try expectEqual(snapshot.track?.artworkURL, URL(string: "https://i.scdn.co/image/example"))
+    }
+
+    private static func testSpotifyArtworkProviderLoadsArtworkData() async throws {
+        let expectedURL = try require(URL(string: "https://i.scdn.co/image/example"), "URL should be valid")
+        let service = SpotifyPlaybackService(
+            runScript: { _ in "" },
+            fetchArtwork: { url in
+                try expectEqual(url, expectedURL)
+                return (Data([0x01, 0x02, 0x03]), "image/jpeg")
+            }
+        )
+        let track = PlaybackTrack(
+            title: "Aimai",
+            artist: "9Lana",
+            album: "Aimai",
+            duration: 220,
+            artworkURL: expectedURL
+        )
+
+        let artwork = try require(await service.artwork(for: track), "Artwork should load")
+
+        try expectEqual(artwork.data, Data([0x01, 0x02, 0x03]))
+        try expectEqual(artwork.mimeType, "image/jpeg")
     }
 
     private static func testTrackArtworkStoresPNGData() throws {

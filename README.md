@@ -1,16 +1,19 @@
 # LyricX
 
-LyricX is a macOS menu-bar app that shows synced Spotify lyrics directly in the menu bar, similar to the desktop lyric modes in NetEase Cloud Music or QQ Music.
+LyricX is a macOS menu-bar app with a companion SwiftUI window for synced Spotify lyrics, similar to the desktop lyric modes in NetEase Cloud Music or QQ Music.
 
 It is built with SwiftUI and Swift Package Manager. The repository does not require a generated Xcode project for normal build, test, or packaging tasks.
 
 ## Features
 
 - Shows the current synced lyric line in the macOS menu bar.
+- Provides a main LyricX window with track status, lyric preview, artwork placeholder, and playback controls.
+- Includes settings for lyric style presets, menu-bar width, font size, color, alignment, and missing-lyrics fallback behavior.
 - Falls back to the current Spotify track name when synced lyrics are missing.
 - Hides the menu-bar icon when lyric or track text is available, and shows the icon only as the empty-state fallback.
 - Reads local Spotify playback state through AppleScript.
 - Fetches synced lyrics from LRCLIB and caches them in Application Support.
+- Checks GitHub Releases manually from the app UI when you want to look for an update.
 
 ## Requirements
 
@@ -18,6 +21,7 @@ It is built with SwiftUI and Swift Package Manager. The repository does not requ
 - Apple Swift 6.2 or newer
 - Spotify for macOS installed
 - Internet access for LRCLIB lyric lookup
+- Internet access for manual GitHub Release update checks
 
 ## Quick Start
 
@@ -45,7 +49,26 @@ Launch the app:
 open dist/LyricX.app
 ```
 
-LyricX is menu-bar-only. Open the menu-bar item to refresh lyrics, toggle lyric text, show the track name when lyrics are missing, or quit.
+LyricX opens a main window and also keeps the lyric line in the menu bar. Open the menu-bar item to show the main window, open settings, control Spotify playback, refresh lyrics, toggle lyric text, show the track name when lyrics are missing, or quit.
+
+## Main Window
+
+The main window shows the current Spotify track, playback state, previous/current/next lyric context, the active style preset, update status, and playback controls for previous, play/pause, next, and lyric refresh.
+
+Spotify artwork is loaded when the current track exposes an artwork URL. LyricX falls back to a compact placeholder when artwork is unavailable.
+
+## Settings
+
+Open settings from the menu-bar item. Settings currently include:
+
+- Lyric style preset selection and editing.
+- Menu-bar width, font size, font weight, text color, alignment, and missing-lyrics fallback behavior.
+- Spotify as the active phase-one music app.
+- Disabled entries for future music-app support.
+- Manual GitHub Release update checking and an Open Release link when an update is available.
+- A disabled floating lyrics entry marked as future work.
+
+Preset edits are saved as JSON under Application Support.
 
 ## Commands
 
@@ -105,6 +128,8 @@ The workflow uses the default `GITHUB_TOKEN` with `contents: write` permission. 
 
 LyricX reads the local Spotify desktop app with AppleScript through `/usr/bin/osascript`. On first launch, macOS may ask for Automation permission to control Spotify or System Events. Approve that permission for playback sync to work.
 
+Spotify is the only enabled music app in this phase. Apple Music, NetEase Cloud Music, QQ Music, and browser players are intentionally shown as disabled future entries in settings.
+
 ## Lyrics
 
 Spotify playback state comes from the local Spotify app. Synced lyrics come from LRCLIB and are cached under Application Support. LyricX tries LRCLIB exact lookup first, then LRCLIB search.
@@ -115,7 +140,7 @@ If LRCLIB does not have synced lyrics for the current track, LyricX keeps pollin
 
 ```text
 Sources/LyricX/          SwiftUI menu-bar app target
-Sources/LyricXCore/      Playback, lyric lookup, parsing, and caching logic
+Sources/LyricXCore/      Playback, lyric lookup, parsing, caching, style, artwork, and update logic
 Sources/LyricXUnitTests/ Executable test target for Command Line Tools environments
 scripts/build-app.sh     Release app bundle builder
 scripts/package-release.sh Release zip and checksum packager
