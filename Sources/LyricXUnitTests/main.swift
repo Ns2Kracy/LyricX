@@ -17,6 +17,7 @@ struct LyricXUnitTests {
         try testSpotifyControlScriptForPlayPause()
         try testSpotifyControlScriptForNextTrack()
         try testSpotifyControlScriptForPreviousTrack()
+        try testSpotifyServiceRunsControlCommand()
         try testLRCLIBLookupURLEncodesTrackQuery()
         try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
@@ -118,6 +119,15 @@ struct LyricXUnitTests {
         try expectEqual(SpotifyPlayerCommand.previousTrack.appleScript, "tell application \"Spotify\" to previous track")
     }
 
+    private static func testSpotifyServiceRunsControlCommand() throws {
+        let recorder = ScriptRecorder()
+        let service = SpotifyPlaybackService(runScript: recorder.run)
+
+        service.nextTrack()
+
+        try expectEqual(recorder.scripts, [SpotifyPlayerCommand.nextTrack.appleScript])
+    }
+
     private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
         let client = LRCLIBClient(baseURL: URL(string: "https://example.test")!)
         let track = PlaybackTrack(
@@ -188,5 +198,23 @@ struct TestFailure: Error, CustomStringConvertible {
 
     var description: String {
         "\(file):\(line): \(message)"
+    }
+}
+
+private final class ScriptRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedScripts: [String] = []
+
+    var scripts: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedScripts
+    }
+
+    func run(_ script: String) throws -> String {
+        lock.lock()
+        recordedScripts.append(script)
+        lock.unlock()
+        return ""
     }
 }

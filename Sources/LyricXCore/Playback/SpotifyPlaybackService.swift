@@ -1,11 +1,19 @@
 import Foundation
 
 public struct SpotifyPlaybackService: Sendable {
-    public init() {}
+    private let runScript: @Sendable (String) throws -> String
+
+    public init() {
+        self.runScript = Self.defaultRunAppleScript
+    }
+
+    public init(runScript: @escaping @Sendable (String) throws -> String) {
+        self.runScript = runScript
+    }
 
     public func currentSnapshot() -> PlaybackSnapshot {
         do {
-            return try Self.parse(output: runAppleScript(Self.spotifyScript))
+            return try Self.parse(output: runScript(Self.spotifyScript))
         } catch {
             return PlaybackSnapshot(state: .unavailable, message: error.localizedDescription)
         }
@@ -49,7 +57,7 @@ public struct SpotifyPlaybackService: Sendable {
         }
     }
 
-    private func runAppleScript(_ script: String) throws -> String {
+    private static func defaultRunAppleScript(_ script: String) throws -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         process.arguments = ["-e", script]
@@ -93,6 +101,24 @@ public struct SpotifyPlaybackService: Sendable {
         return playbackState & linefeed & trackName & linefeed & artistName & linefeed & albumName & linefeed & durationValue & linefeed & positionValue
     end tell
     """
+}
+
+extension SpotifyPlaybackService: PlayerService {
+    public func playPause() {
+        runCommand(.playPause)
+    }
+
+    public func nextTrack() {
+        runCommand(.nextTrack)
+    }
+
+    public func previousTrack() {
+        runCommand(.previousTrack)
+    }
+
+    private func runCommand(_ command: SpotifyPlayerCommand) {
+        _ = try? runScript(command.appleScript)
+    }
 }
 
 enum SpotifyPlaybackError: LocalizedError {
