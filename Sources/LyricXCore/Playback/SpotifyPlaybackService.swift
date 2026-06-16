@@ -121,6 +121,12 @@ extension SpotifyPlaybackService: PlayerService {
     }
 }
 
+extension SpotifyPlaybackService: ArtworkProvider {
+    public func artwork(for _: PlaybackTrack) async -> TrackArtwork? {
+        nil
+    }
+}
+
 enum SpotifyPlaybackError: LocalizedError {
     case scriptFailed(String)
 

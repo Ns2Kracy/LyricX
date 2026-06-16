@@ -18,6 +18,7 @@ struct LyricXUnitTests {
         try testSpotifyControlScriptForNextTrack()
         try testSpotifyControlScriptForPreviousTrack()
         try testSpotifyServiceRunsControlCommand()
+        try testTrackArtworkStoresPNGData()
         try testLRCLIBLookupURLEncodesTrackQuery()
         try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
@@ -126,6 +127,14 @@ struct LyricXUnitTests {
         service.nextTrack()
 
         try expectEqual(recorder.scripts, [SpotifyPlayerCommand.nextTrack.appleScript])
+    }
+
+    private static func testTrackArtworkStoresPNGData() throws {
+        let data = Data([0x89, 0x50, 0x4E, 0x47])
+        let artwork = TrackArtwork(data: data, mimeType: "image/png")
+
+        try expectEqual(artwork.data, data)
+        try expectEqual(artwork.mimeType, "image/png")
     }
 
     private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
