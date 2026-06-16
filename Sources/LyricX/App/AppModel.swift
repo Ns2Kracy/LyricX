@@ -11,11 +11,14 @@ final class AppModel {
     var currentLine: LyricLine?
     var nextLine: LyricLine?
     var lyricsStatus = "Waiting for Spotify"
+    var displayTick = 0
 
     @ObservationIgnored private let playbackService: SpotifyPlaybackService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
     @ObservationIgnored private let lyricSegmenter = MenuBarLyricSegmenter(visibleCharacters: 28)
+    @ObservationIgnored private let marquee = MenuBarMarquee(visibleCharacters: 28)
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
+    @ObservationIgnored private var displayRefreshTask: Task<Void, Never>?
     @ObservationIgnored private var lastLyricsTrack: PlaybackTrack?
     @ObservationIgnored private var playbackUpdatedAt = Date()
 
@@ -49,6 +52,8 @@ final class AppModel {
     }
 
     func menuBarPresentation(at date: Date = Date()) -> MenuBarPresentation {
+        let marqueeOffset = displayTick
+
         guard isLyricsVisible else {
             return MenuBarPresentation(
                 text: "LyricX",
@@ -76,19 +81,21 @@ final class AppModel {
 
         if let track = playback.track, showsTrackWhenLyricsMissing {
             let title = "\(track.title) - \(track.artist)"
+            let isMarquee = title.count > marquee.visibleCharacters
             return MenuBarPresentation(
-                text: title,
+                text: isMarquee ? marquee.displayText(title, offset: marqueeOffset) : title,
                 accessibilityText: title,
                 symbol: nil,
-                behavior: title.count > 28 ? .marquee : .staticText
+                behavior: isMarquee ? .marquee : .staticText
             )
         }
 
+        let isMarquee = lyricsStatus.count > marquee.visibleCharacters
         return MenuBarPresentation(
-            text: lyricsStatus,
+            text: isMarquee ? marquee.displayText(lyricsStatus, offset: marqueeOffset) : lyricsStatus,
             accessibilityText: lyricsStatus,
             symbol: menuBarSymbol,
-            behavior: lyricsStatus.count > 28 ? .marquee : .staticText
+            behavior: isMarquee ? .marquee : .staticText
         )
     }
 
@@ -99,10 +106,12 @@ final class AppModel {
         self.playbackService = playbackService
         self.lyricsRepository = lyricsRepository
         startPolling()
+        startDisplayRefresh()
     }
 
     deinit {
         pollingTask?.cancel()
+        displayRefreshTask?.cancel()
     }
 
     func startPolling() {
@@ -114,6 +123,19 @@ final class AppModel {
             while !Task.isCancelled {
                 await self?.pollOnce()
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
+    }
+
+    func startDisplayRefresh() {
+        guard displayRefreshTask == nil else {
+            return
+        }
+
+        displayRefreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                self?.displayTick = ((self?.displayTick ?? 0) + 1) % 10_000
+                try? await Task.sleep(nanoseconds: 180_000_000)
             }
         }
     }

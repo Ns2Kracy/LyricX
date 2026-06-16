@@ -14,6 +14,8 @@ struct LyricXUnitTests {
         try testSplitsLongMenuBarLyricOnWordBoundaries()
         try testSplitsLongMenuBarLyricWithoutSpaces()
         try testMenuBarLyricSegmentAdvancesWithinLineDuration()
+        try testMenuBarMarqueeKeepsShortTextWhole()
+        try testMenuBarMarqueeReturnsFixedWindowForLongText()
         try testLRCLIBLookupURLEncodesTrackQuery()
         try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
@@ -105,6 +107,20 @@ struct LyricXUnitTests {
         try expectEqual(segmenter.displayText(for: current, nextLine: next, position: 10.0), "abcdefghij")
         try expectEqual(segmenter.displayText(for: current, nextLine: next, position: 12.1), "klmnopqrst")
         try expectEqual(segmenter.displayText(for: current, nextLine: next, position: 14.1), "uvwxyz")
+    }
+
+    private static func testMenuBarMarqueeKeepsShortTextWhole() throws {
+        let marquee = MenuBarMarquee(visibleCharacters: 10)
+
+        try expectEqual(marquee.displayText("Short", offset: 5), "Short")
+    }
+
+    private static func testMenuBarMarqueeReturnsFixedWindowForLongText() throws {
+        let marquee = MenuBarMarquee(visibleCharacters: 6, paddingCharacters: 2)
+
+        try expectEqual(marquee.displayText("abcdefghij", offset: 0), "abcdef")
+        try expectEqual(marquee.displayText("abcdefghij", offset: 3), "defghi")
+        try expectEqual(marquee.displayText("abcdefghij", offset: 9), "j  abc")
     }
 
     private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
