@@ -11,7 +11,9 @@ struct LyricXApp: App {
             MenuBarContentView(model: container.model)
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: container.model.menuBarSymbol)
+                if container.model.shouldShowMenuBarIcon {
+                    Image(systemName: container.model.menuBarSymbol)
+                }
                 Text(container.model.menuBarDisplayText)
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)

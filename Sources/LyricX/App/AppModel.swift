@@ -32,6 +32,10 @@ final class AppModel {
         playback.isPlaying ? "music.note" : "music.note.list"
     }
 
+    var shouldShowMenuBarIcon: Bool {
+        nonBlank(currentLine?.text) == nil && (playback.track == nil || !showsTrackWhenLyricsMissing)
+    }
+
     var menuBarText: String {
         guard isLyricsVisible else {
             return "LyricX"
@@ -42,7 +46,7 @@ final class AppModel {
         }
 
         if let track = playback.track, showsTrackWhenLyricsMissing {
-            return "♪ \(track.title) - \(track.artist)"
+            return "\(track.title) - \(track.artist)"
         }
 
         return lyricsStatus
