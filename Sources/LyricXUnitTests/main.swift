@@ -12,6 +12,7 @@ struct LyricXUnitTests {
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
         try testTimelineReturnsNextLineAfterPosition()
         try testLRCLIBLookupURLEncodesTrackQuery()
+        try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
     }
 
@@ -95,6 +96,25 @@ struct LyricXUnitTests {
         try expectEqual(queryValue("artist_name", in: components), "Artist & Friend")
         try expectEqual(queryValue("album_name", in: components), "Album Name")
         try expectEqual(queryValue("duration", in: components), "123")
+    }
+
+    private static func testLRCLIBSearchURLEncodesTrackQuery() throws {
+        let client = LRCLIBClient(baseURL: URL(string: "https://example.test")!)
+        let track = PlaybackTrack(
+            title: "Sweet / Song",
+            artist: "Artist & Friend",
+            album: "Album Name",
+            duration: 123.4
+        )
+        let url = client.searchURL(for: track)
+        let components = try require(URLComponents(url: url, resolvingAgainstBaseURL: false), "URL should be parseable")
+
+        try expectEqual(components.scheme, "https")
+        try expectEqual(components.host, "example.test")
+        try expectEqual(components.path, "/api/search")
+        try expectEqual(queryValue("track_name", in: components), "Sweet / Song")
+        try expectEqual(queryValue("artist_name", in: components), "Artist & Friend")
+        try expectEqual(queryValue("album_name", in: components), "Album Name")
     }
 
     private static func expectEqual<T: Equatable>(_ actual: T, _ expected: T, file: StaticString = #file, line: UInt = #line) throws {

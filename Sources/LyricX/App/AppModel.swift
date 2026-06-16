@@ -11,6 +11,7 @@ final class AppModel {
     var currentLine: LyricLine?
     var nextLine: LyricLine?
     var lyricsStatus = "Waiting for Spotify"
+    var marqueeTick = 0
 
     @ObservationIgnored private let playbackService: SpotifyPlaybackService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
@@ -22,18 +23,33 @@ final class AppModel {
         set { settings.showsLyrics = newValue }
     }
 
-    var isFloatingPanelLocked: Bool {
-        get { settings.locksFloatingPanel }
-        set { settings.locksFloatingPanel = newValue }
-    }
-
-    var isClickThroughEnabled: Bool {
-        get { settings.clickThroughFloatingPanel }
-        set { settings.clickThroughFloatingPanel = newValue }
+    var showsTrackWhenLyricsMissing: Bool {
+        get { settings.showsTrackWhenLyricsMissing }
+        set { settings.showsTrackWhenLyricsMissing = newValue }
     }
 
     var menuBarSymbol: String {
         playback.isPlaying ? "music.note" : "music.note.list"
+    }
+
+    var menuBarText: String {
+        guard isLyricsVisible else {
+            return "LyricX"
+        }
+
+        if let lyric = nonBlank(currentLine?.text) {
+            return lyric
+        }
+
+        if let track = playback.track, showsTrackWhenLyricsMissing {
+            return "♪ \(track.title) - \(track.artist)"
+        }
+
+        return lyricsStatus
+    }
+
+    var menuBarDisplayText: String {
+        marquee(menuBarText, visibleCharacters: 28, offset: marqueeTick)
     }
 
     var trackSummary: String {
@@ -64,6 +80,7 @@ final class AppModel {
         pollingTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.pollOnce()
+                self?.marqueeTick += 1
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
         }
@@ -119,7 +136,7 @@ final class AppModel {
 
         timeline = loadedTimeline
         if loadedTimeline == nil {
-            lyricsStatus = "No synced lyrics found"
+            lyricsStatus = "No synced lyrics for \(track.title)"
         } else {
             lyricsStatus = "Lyrics synced"
         }
@@ -129,5 +146,21 @@ final class AppModel {
     private func updateActiveLines(at position: TimeInterval) {
         currentLine = timeline?.currentLine(at: position)
         nextLine = timeline?.nextLine(after: position)
+    }
+
+    private func marquee(_ text: String, visibleCharacters: Int, offset: Int) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > visibleCharacters else {
+            return trimmed
+        }
+
+        let padded = Array(trimmed + "    ")
+        let start = offset % padded.count
+        return String((0..<visibleCharacters).map { padded[(start + $0) % padded.count] })
+    }
+
+    private func nonBlank(_ text: String?) -> String? {
+        let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

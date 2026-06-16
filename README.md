@@ -1,6 +1,6 @@
 # LyricX
 
-LyricX is a macOS menu-bar app that shows synced Spotify lyrics in a floating desktop overlay, similar to NetEase or QQ Music desktop lyrics.
+LyricX is a macOS menu-bar app that shows synced Spotify lyrics directly in the macOS menu bar, similar to desktop lyric modes in NetEase or QQ Music.
 
 ## Requirements
 
@@ -31,7 +31,7 @@ The bundle is written to `dist/LyricX.app`.
 open dist/LyricX.app
 ```
 
-LyricX runs as a menu-bar-only app. The floating lyric panel appears near the lower center of the main display. Use the menu-bar item to show or hide lyrics, lock the panel position, enable click-through mode, refresh lyrics, or quit.
+LyricX runs as a menu-bar-only app. The menu-bar item itself displays the current lyric line when synced lyrics are available. Use the menu to show or hide lyric text, show the track name when lyrics are missing, refresh lyrics, or quit.
 
 ## Spotify Permissions
 
@@ -39,7 +39,7 @@ LyricX reads the local Spotify desktop app with AppleScript through `/usr/bin/os
 
 ## Lyrics
 
-Spotify playback state comes from the local Spotify app. Synced lyrics come from LRCLIB and are cached under Application Support. If LRCLIB does not have synced lyrics for the current track, LyricX keeps polling Spotify and shows a visible `No synced lyrics found` state.
+Spotify playback state comes from the local Spotify app. Synced lyrics come from LRCLIB and are cached under Application Support. LyricX tries LRCLIB exact lookup first, then LRCLIB search. If LRCLIB does not have synced lyrics for the current track, LyricX keeps polling Spotify and shows the track name or a visible `No synced lyrics for <track>` state.
 
 ## Test
 

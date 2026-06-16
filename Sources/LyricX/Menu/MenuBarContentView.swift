@@ -22,15 +22,11 @@ struct MenuBarContentView: View {
         Divider()
 
         Toggle(isOn: boolBinding(\.isLyricsVisible)) {
-            Label("Show Lyrics", systemImage: "text.quote")
+            Label("Show Lyrics in Menu Bar", systemImage: "text.quote")
         }
 
-        Toggle(isOn: boolBinding(\.isFloatingPanelLocked)) {
-            Label("Lock Position", systemImage: model.isFloatingPanelLocked ? "lock" : "lock.open")
-        }
-
-        Toggle(isOn: boolBinding(\.isClickThroughEnabled)) {
-            Label("Click Through", systemImage: "cursorarrow.rays")
+        Toggle(isOn: boolBinding(\.showsTrackWhenLyricsMissing)) {
+            Label("Show Track When Missing", systemImage: "music.note.list")
         }
 
         Button {
