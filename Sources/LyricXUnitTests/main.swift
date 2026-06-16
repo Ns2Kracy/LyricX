@@ -19,6 +19,8 @@ struct LyricXUnitTests {
         try testSpotifyControlScriptForPreviousTrack()
         try testSpotifyServiceRunsControlCommand()
         try testTrackArtworkStoresPNGData()
+        try testDefaultStylePresetsIncludeMenuBarCompact()
+        try testStylePresetCodableRoundTrip()
         try testLRCLIBLookupURLEncodesTrackQuery()
         try testLRCLIBSearchURLEncodesTrackQuery()
         print("LyricXUnitTests passed")
@@ -135,6 +137,20 @@ struct LyricXUnitTests {
 
         try expectEqual(artwork.data, data)
         try expectEqual(artwork.mimeType, "image/png")
+    }
+
+    private static func testDefaultStylePresetsIncludeMenuBarCompact() throws {
+        let presets = LyricStylePreset.defaults
+
+        try expectEqual(presets.first?.name, "Menu Bar Compact")
+    }
+
+    private static func testStylePresetCodableRoundTrip() throws {
+        let preset = LyricStylePreset.defaults[0]
+        let data = try JSONEncoder().encode(preset)
+        let decoded = try JSONDecoder().decode(LyricStylePreset.self, from: data)
+
+        try expectEqual(decoded, preset)
     }
 
     private static func testLRCLIBLookupURLEncodesTrackQuery() throws {
