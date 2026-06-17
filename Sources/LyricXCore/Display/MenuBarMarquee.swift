@@ -9,6 +9,12 @@ public struct MenuBarMarquee: Sendable {
         self.paddingCharacters = max(1, paddingCharacters)
     }
 
+    public static func scrollOffset(progress: Double, contentWidth: Double, visibleWidth: Double) -> Double {
+        let overflow = max(contentWidth - visibleWidth, 0)
+        let clampedProgress = min(max(progress, 0), 1)
+        return -overflow * clampedProgress
+    }
+
     public func displayText(_ text: String, offset: Int) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count > visibleCharacters else {

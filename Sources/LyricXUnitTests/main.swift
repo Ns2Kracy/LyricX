@@ -15,6 +15,8 @@ struct LyricXUnitTests {
         try testMenuBarMarqueeReturnsFixedWindowForLongText()
         try testMenuBarMarqueeReturnsTimedWindowForLongLyric()
         try testMenuBarMarqueeShowsFinalWindowBeforeLineSwitch()
+        try testMenuBarMarqueeCalculatesContinuousScrollOffset()
+        try testMenuBarMarqueeClampsContinuousScrollProgress()
         try testSpotifyControlScriptForPlayPause()
         try testSpotifyControlScriptForNextTrack()
         try testSpotifyControlScriptForPreviousTrack()
@@ -121,6 +123,18 @@ struct LyricXUnitTests {
         let marquee = MenuBarMarquee(visibleCharacters: 6)
 
         try expectEqual(marquee.displayText("abcdefghij", progress: 0.99), "efghij")
+    }
+
+    private static func testMenuBarMarqueeCalculatesContinuousScrollOffset() throws {
+        try expectEqual(MenuBarMarquee.scrollOffset(progress: 0.0, contentWidth: 300, visibleWidth: 220), 0)
+        try expectEqual(MenuBarMarquee.scrollOffset(progress: 0.5, contentWidth: 300, visibleWidth: 220), -40)
+        try expectEqual(MenuBarMarquee.scrollOffset(progress: 1.0, contentWidth: 300, visibleWidth: 220), -80)
+        try expectEqual(MenuBarMarquee.scrollOffset(progress: 1.0, contentWidth: 200, visibleWidth: 220), 0)
+    }
+
+    private static func testMenuBarMarqueeClampsContinuousScrollProgress() throws {
+        try expectEqual(MenuBarMarquee.scrollOffset(progress: -1.0, contentWidth: 300, visibleWidth: 220), 0)
+        try expectEqual(MenuBarMarquee.scrollOffset(progress: 2.0, contentWidth: 300, visibleWidth: 220), -80)
     }
 
     private static func testSpotifyControlScriptForPlayPause() throws {
