@@ -23,6 +23,15 @@ struct SettingsView: View {
                 PresetEditorView(preset: activePresetBinding)
             }
 
+            Section("Menu Bar") {
+                Picker("Animation Frame Rate", selection: $model.menuBarFrameRate) {
+                    ForEach(MenuBarAnimationFrameRate.allCases) { frameRate in
+                        Text(frameRate.label).tag(frameRate)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
             Section("Player") {
                 LabeledContent("Music App") {
                     Label("Spotify", systemImage: "checkmark.circle.fill")
