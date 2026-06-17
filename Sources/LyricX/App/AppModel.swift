@@ -79,10 +79,10 @@ final class AppModel {
         if let line = timeline?.currentLine(at: position), let lyric = nonBlank(line.text) {
             let isMarquee = lyric.count > marquee.visibleCharacters
             return MenuBarPresentation(
-                text: isMarquee ? marquee.displayText(lyric, progress: lyricProgress(for: line, at: position)) : lyric,
+                text: lyric,
                 accessibilityText: lyric,
                 symbol: nil,
-                behavior: isMarquee ? .marquee : .staticText
+                behavior: isMarquee ? .continuousMarquee(progress: lyricProgress(for: line, at: position)) : .staticText
             )
         }
 
