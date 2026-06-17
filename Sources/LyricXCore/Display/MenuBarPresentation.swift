@@ -37,22 +37,24 @@ public struct MenuBarStyle: Equatable, Sendable {
 }
 
 public struct MenuBarStatusItemLayout: Equatable, Sendable {
-    public var viewportWidth: Double
+    public var maxViewportWidth: Double
+    public var contentWidth: Double
     public var horizontalPadding: Double
     public var leadingAccessoryWidth: Double
 
-    public init(viewportWidth: Double, horizontalPadding: Double, leadingAccessoryWidth: Double) {
-        self.viewportWidth = max(viewportWidth, 1)
+    public init(maxViewportWidth: Double, contentWidth: Double, horizontalPadding: Double, leadingAccessoryWidth: Double) {
+        self.maxViewportWidth = max(maxViewportWidth, 1)
+        self.contentWidth = max(contentWidth, 1)
         self.horizontalPadding = max(horizontalPadding, 0)
         self.leadingAccessoryWidth = max(leadingAccessoryWidth, 0)
     }
 
     public var statusItemWidth: Double {
         guard leadingAccessoryWidth > 0 else {
-            return viewportWidth
+            return textViewportWidth
         }
 
-        return horizontalPadding * 2 + leadingAccessoryWidth + viewportWidth
+        return horizontalPadding * 2 + leadingAccessoryWidth + textViewportWidth
     }
 
     public var textViewportMinX: Double {
@@ -64,7 +66,7 @@ public struct MenuBarStatusItemLayout: Equatable, Sendable {
     }
 
     public var textViewportWidth: Double {
-        viewportWidth
+        min(contentWidth, maxViewportWidth)
     }
 }
 

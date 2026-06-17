@@ -20,6 +20,8 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
+        statusItem.autosaveName = "com.ns2kracy.LyricX.menuBarLyrics"
+
         statusView.target = self
         statusView.action = #selector(togglePopover(_:))
         if let button = statusItem.button {

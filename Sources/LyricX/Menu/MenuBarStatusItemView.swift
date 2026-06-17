@@ -78,12 +78,13 @@ final class MenuBarStatusItemView: NSControl {
     }
 
     private func width(for presentation: MenuBarPresentation) -> CGFloat {
-        CGFloat(max(24, layout(for: presentation).statusItemWidth))
+        CGFloat(max(24, layout(for: presentation, attributedText: attributedText(color: .labelColor)).statusItemWidth))
     }
 
     private func textDrawingRect() -> NSRect {
-        let layout = layout(for: presentation)
-        let height = attributedText(color: .labelColor).size().height
+        let text = attributedText(color: .labelColor)
+        let layout = layout(for: presentation, attributedText: text)
+        let height = text.size().height
         return NSRect(
             x: CGFloat(layout.textViewportMinX),
             y: floor((bounds.height - height) / 2),
@@ -92,12 +93,22 @@ final class MenuBarStatusItemView: NSControl {
         )
     }
 
-    private func layout(for presentation: MenuBarPresentation) -> MenuBarStatusItemLayout {
+    private func layout(for presentation: MenuBarPresentation, attributedText: NSAttributedString) -> MenuBarStatusItemLayout {
         MenuBarStatusItemLayout(
-            viewportWidth: presentation.style.viewportWidth,
+            maxViewportWidth: presentation.style.viewportWidth,
+            contentWidth: contentWidth(for: presentation, attributedText: attributedText),
             horizontalPadding: Double(horizontalPadding),
             leadingAccessoryWidth: presentation.symbol == nil ? 0 : Double(iconSize + iconSpacing)
         )
+    }
+
+    private func contentWidth(for presentation: MenuBarPresentation, attributedText: NSAttributedString) -> Double {
+        switch presentation.behavior {
+        case .continuousMarquee(let contentWidth, _):
+            return contentWidth
+        case .staticText:
+            return Double(ceil(attributedText.size().width))
+        }
     }
 
     private func drawText(in rect: NSRect, color: NSColor) {
