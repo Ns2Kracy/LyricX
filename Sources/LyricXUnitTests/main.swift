@@ -20,6 +20,10 @@ struct LyricXUnitTests {
         try testMenuBarAnimationFrameRatesExposeSupportedValues()
         try testMenuBarAnimationFrameRateIntervals()
         try testMenuBarAnimationFrameRateCodableRoundTrip()
+        try testTimelineMarqueeOffsetPausesBeforeMoving()
+        try testTimelineMarqueeOffsetMovesAtConfiguredSpeed()
+        try testTimelineMarqueeOffsetWrapsAfterCycle()
+        try testTimelineMarqueeOffsetStaysZeroWithoutOverflow()
         try testSpotifyControlScriptForPlayPause()
         try testSpotifyControlScriptForNextTrack()
         try testSpotifyControlScriptForPreviousTrack()
@@ -159,6 +163,31 @@ struct LyricXUnitTests {
         let decoded = try JSONDecoder().decode(MenuBarAnimationFrameRate.self, from: data)
 
         try expectEqual(decoded, .fps120)
+    }
+
+    private static func testTimelineMarqueeOffsetPausesBeforeMoving() throws {
+        let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
+
+        try expectEqual(marquee.offset(elapsedTime: 0.4, contentWidth: 320), 0)
+    }
+
+    private static func testTimelineMarqueeOffsetMovesAtConfiguredSpeed() throws {
+        let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
+
+        try expectEqual(marquee.offset(elapsedTime: 1.8, contentWidth: 320), -34)
+    }
+
+    private static func testTimelineMarqueeOffsetWrapsAfterCycle() throws {
+        let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
+        let cycleDuration = marquee.cycleDuration(contentWidth: 320)
+
+        try expectEqual(marquee.offset(elapsedTime: cycleDuration + 0.4, contentWidth: 320), 0)
+    }
+
+    private static func testTimelineMarqueeOffsetStaysZeroWithoutOverflow() throws {
+        let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
+
+        try expectEqual(marquee.offset(elapsedTime: 10, contentWidth: 200), 0)
     }
 
     private static func testSpotifyControlScriptForPlayPause() throws {
