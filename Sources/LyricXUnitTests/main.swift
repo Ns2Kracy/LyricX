@@ -32,6 +32,8 @@ struct LyricXUnitTests {
         try await testSpotifyArtworkProviderLoadsArtworkData()
         try testTrackArtworkStoresPNGData()
         try testDefaultStylePresetsIncludeMenuBarCompact()
+        try testStylePresetDerivesMenuBarStyle()
+        try testMenuBarBehaviorUsesPresetWidth()
         try testStylePresetCodableRoundTrip()
         try testStylePresetStoreSavesAndLoadsSelection()
         try testAppSettingsDefaultFrameRateIsThirtyFPS()
@@ -263,6 +265,34 @@ struct LyricXUnitTests {
         let presets = LyricStylePreset.defaults
 
         try expectEqual(presets.first?.name, "Menu Bar Compact")
+    }
+
+    private static func testStylePresetDerivesMenuBarStyle() throws {
+        let preset = LyricStylePreset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000201")!,
+            name: "Custom",
+            menuBarWidth: 320,
+            fontSize: 18,
+            fontWeight: "semibold",
+            textColorHex: "#FF3366",
+            alignment: .center,
+            showsTrackWhenLyricsMissing: true
+        )
+
+        try expectEqual(preset.menuBarStyle.viewportWidth, 320)
+        try expectEqual(preset.menuBarStyle.fontSize, 18)
+        try expectEqual(preset.menuBarStyle.fontWeight, .semibold)
+        try expectEqual(preset.menuBarStyle.textColorHex, "#FF3366")
+        try expectEqual(preset.menuBarStyle.alignment, .center)
+    }
+
+    private static func testMenuBarBehaviorUsesPresetWidth() throws {
+        let startedAt = Date(timeIntervalSinceReferenceDate: 10)
+        let compact = MenuBarStyle(viewportWidth: 160, fontSize: 13, fontWeight: .medium, textColorHex: "#FFFFFF", alignment: .leading)
+        let wide = MenuBarStyle(viewportWidth: 320, fontSize: 13, fontWeight: .medium, textColorHex: "#FFFFFF", alignment: .leading)
+
+        try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: compact, startedAt: startedAt), .continuousMarquee(contentWidth: 240, startedAt: startedAt))
+        try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: wide, startedAt: startedAt), .staticText)
     }
 
     private static func testStylePresetCodableRoundTrip() throws {

@@ -41,6 +41,7 @@ final class AppModel {
         set {
             settings.showsTrackWhenLyricsMissing = newValue
             persistSettings()
+            updateActivePresetShowsTrackWhenLyricsMissing(newValue)
         }
     }
 
@@ -76,12 +77,15 @@ final class AppModel {
     }
 
     func menuBarPresentation(at date: Date = Date()) -> MenuBarPresentation {
+        let style = activeStylePreset.menuBarStyle
+
         guard isLyricsVisible else {
             return MenuBarPresentation(
                 text: "LyricX",
                 accessibilityText: "LyricX",
                 symbol: menuBarSymbol,
-                behavior: .staticText
+                behavior: .staticText,
+                style: style
             )
         }
 
@@ -92,7 +96,8 @@ final class AppModel {
                 text: lyric,
                 accessibilityText: lyric,
                 symbol: nil,
-                behavior: menuBarBehavior(for: lyric, startedAt: startedAt)
+                behavior: menuBarBehavior(for: lyric, startedAt: startedAt, style: style),
+                style: style
             )
         }
 
@@ -102,7 +107,8 @@ final class AppModel {
                 text: title,
                 accessibilityText: title,
                 symbol: nil,
-                behavior: menuBarBehavior(for: title, startedAt: .menuBarReferenceStart)
+                behavior: menuBarBehavior(for: title, startedAt: .menuBarReferenceStart, style: style),
+                style: style
             )
         }
 
@@ -110,7 +116,8 @@ final class AppModel {
             text: lyricsStatus,
             accessibilityText: lyricsStatus,
             symbol: menuBarSymbol,
-            behavior: menuBarBehavior(for: lyricsStatus, startedAt: .menuBarReferenceStart)
+            behavior: menuBarBehavior(for: lyricsStatus, startedAt: .menuBarReferenceStart, style: style),
+            style: style
         )
     }
 
@@ -314,13 +321,19 @@ final class AppModel {
         date.addingTimeInterval(line.time - position)
     }
 
-    private func menuBarBehavior(for text: String, startedAt: Date) -> MenuBarTextBehavior {
-        let contentWidth = Double(menuBarTextMetrics.width(for: text))
-        guard contentWidth > Double(MenuBarTextMetrics.viewportWidth) else {
-            return .staticText
+    private func menuBarBehavior(for text: String, startedAt: Date, style: MenuBarStyle) -> MenuBarTextBehavior {
+        let contentWidth = Double(menuBarTextMetrics.width(for: text, style: style))
+        return MenuBarTextBehavior.behavior(contentWidth: contentWidth, style: style, startedAt: startedAt)
+    }
+
+    private func updateActivePresetShowsTrackWhenLyricsMissing(_ value: Bool) {
+        guard let index = stylePresets.firstIndex(where: { $0.id == activeStylePresetID }),
+              stylePresets[index].showsTrackWhenLyricsMissing != value else {
+            return
         }
 
-        return .continuousMarquee(contentWidth: contentWidth, startedAt: startedAt)
+        stylePresets[index].showsTrackWhenLyricsMissing = value
+        persistPresetState()
     }
 
     private func nonBlank(_ text: String?) -> String? {

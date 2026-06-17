@@ -1,20 +1,14 @@
 import AppKit
 import Foundation
+import LyricXCore
 
 final class MenuBarTextMetrics {
-    static let viewportWidth: CGFloat = 220
-    static let fontSize: CGFloat = 13
-
-    private let font: NSFont
     private let cacheLimit = 256
-    private var widths: [String: CGFloat] = [:]
+    private var widths: [CacheKey: CGFloat] = [:]
 
-    init(fontSize: CGFloat = MenuBarTextMetrics.fontSize, fontWeight: NSFont.Weight = .medium) {
-        font = NSFont.systemFont(ofSize: fontSize, weight: fontWeight)
-    }
-
-    func width(for text: String) -> CGFloat {
-        if let width = widths[text] {
+    func width(for text: String, style: MenuBarStyle) -> CGFloat {
+        let key = CacheKey(text: text, fontSize: style.fontSize, fontWeight: style.fontWeight)
+        if let width = widths[key] {
             return width
         }
 
@@ -22,8 +16,28 @@ final class MenuBarTextMetrics {
             widths.removeAll(keepingCapacity: true)
         }
 
+        let font = NSFont.systemFont(ofSize: CGFloat(style.fontSize), weight: style.fontWeight.appKitWeight)
         let width = (text as NSString).size(withAttributes: [.font: font]).width
-        widths[text] = width
+        widths[key] = width
         return width
+    }
+
+    private struct CacheKey: Hashable {
+        let text: String
+        let fontSize: Double
+        let fontWeight: MenuBarFontWeight
+    }
+}
+
+private extension MenuBarFontWeight {
+    var appKitWeight: NSFont.Weight {
+        switch self {
+        case .regular:
+            return .regular
+        case .medium:
+            return .medium
+        case .semibold:
+            return .semibold
+        }
     }
 }

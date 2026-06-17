@@ -3,8 +3,6 @@ import LyricXCore
 
 @MainActor
 final class MenuBarStatusItemView: NSControl {
-    private let statusFont = NSFont.systemFont(ofSize: MenuBarTextMetrics.fontSize, weight: .medium)
-    private let viewportWidth = MenuBarTextMetrics.viewportWidth
     private let horizontalPadding: CGFloat = 8
     private let iconSize: CGFloat = 14
     private let iconSpacing: CGFloat = 4
@@ -48,7 +46,7 @@ final class MenuBarStatusItemView: NSControl {
             NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 4, yRadius: 4).fill()
         }
 
-        let color = popoverHighlighted ? NSColor.selectedMenuItemTextColor : NSColor.labelColor
+        let color = textColor()
         let textRect = textDrawingRect()
         var textOriginX = textRect.minX
 
@@ -70,12 +68,7 @@ final class MenuBarStatusItemView: NSControl {
     }
 
     private func width(for presentation: MenuBarPresentation) -> CGFloat {
-        let textWidth = switch presentation.behavior {
-        case .continuousMarquee:
-            viewportWidth
-        case .staticText:
-            min(ceil(attributedText(color: .labelColor).size().width), viewportWidth)
-        }
+        let textWidth = CGFloat(presentation.style.viewportWidth)
         let iconWidth = presentation.symbol == nil ? 0 : iconSize + iconSpacing
         return max(24, horizontalPadding * 2 + iconWidth + textWidth)
     }
@@ -101,15 +94,15 @@ final class MenuBarStatusItemView: NSControl {
         let text = attributedText(color: color)
         switch presentation.behavior {
         case .continuousMarquee(let contentWidth, let startedAt):
-            let marquee = MenuBarTimelineMarquee(viewportWidth: Double(viewportWidth))
+            let marquee = MenuBarTimelineMarquee(viewportWidth: Double(rect.width))
             let offset = CGFloat(marquee.offset(elapsedTime: date.timeIntervalSince(startedAt), contentWidth: contentWidth))
             text.draw(at: NSPoint(x: rect.minX + offset, y: rect.minY))
 
-            if contentWidth > Double(viewportWidth) {
+            if contentWidth > Double(rect.width) {
                 text.draw(at: NSPoint(x: rect.minX + offset + CGFloat(contentWidth) + CGFloat(marquee.gap), y: rect.minY))
             }
         case .staticText:
-            text.draw(at: NSPoint(x: rect.minX, y: rect.minY))
+            text.draw(at: NSPoint(x: alignedTextX(for: text, in: rect), y: rect.minY))
         }
 
         context.restoreGraphicsState()
@@ -133,10 +126,34 @@ final class MenuBarStatusItemView: NSControl {
         NSAttributedString(
             string: presentation.text,
             attributes: [
-                .font: statusFont,
+                .font: NSFont.systemFont(ofSize: CGFloat(presentation.style.fontSize), weight: presentation.style.fontWeight.appKitWeight),
                 .foregroundColor: color
             ]
         )
+    }
+
+    private func alignedTextX(for text: NSAttributedString, in rect: NSRect) -> CGFloat {
+        let textWidth = ceil(text.size().width)
+        guard textWidth < rect.width else {
+            return rect.minX
+        }
+
+        switch presentation.style.alignment {
+        case .leading:
+            return rect.minX
+        case .center:
+            return rect.minX + floor((rect.width - textWidth) / 2)
+        case .trailing:
+            return rect.maxX - textWidth
+        }
+    }
+
+    private func textColor() -> NSColor {
+        if popoverHighlighted {
+            return .selectedMenuItemTextColor
+        }
+
+        return NSColor(hex: presentation.style.textColorHex) ?? .labelColor
     }
 
     private func tinted(image: NSImage, color: NSColor) -> NSImage {
@@ -146,5 +163,34 @@ final class MenuBarStatusItemView: NSControl {
         NSRect(origin: .zero, size: image.size).fill(using: .sourceAtop)
         image.unlockFocus()
         return image
+    }
+}
+
+private extension MenuBarFontWeight {
+    var appKitWeight: NSFont.Weight {
+        switch self {
+        case .regular:
+            return .regular
+        case .medium:
+            return .medium
+        case .semibold:
+            return .semibold
+        }
+    }
+}
+
+private extension NSColor {
+    convenience init?(hex: String) {
+        let trimmed = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#").union(.whitespacesAndNewlines))
+        guard trimmed.count == 6, let value = Int(trimmed, radix: 16) else {
+            return nil
+        }
+
+        self.init(
+            srgbRed: CGFloat((value >> 16) & 0xFF) / 255,
+            green: CGFloat((value >> 8) & 0xFF) / 255,
+            blue: CGFloat(value & 0xFF) / 255,
+            alpha: 1
+        )
     }
 }
