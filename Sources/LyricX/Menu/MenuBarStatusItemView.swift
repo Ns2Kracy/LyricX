@@ -13,7 +13,8 @@ final class MenuBarStatusItemView: NSControl {
         behavior: .staticText
     )
     private var date = Date()
-    private var popoverHighlighted = false
+    private var clickFeedbackVisible = false
+    private var clickFeedbackGeneration = 0
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -29,20 +30,35 @@ final class MenuBarStatusItemView: NSControl {
         NSSize(width: width(for: presentation), height: NSStatusBar.system.thickness)
     }
 
-    func update(presentation: MenuBarPresentation, date: Date, highlighted: Bool) {
+    func update(presentation: MenuBarPresentation, date: Date) {
         self.presentation = presentation
         self.date = date
-        self.popoverHighlighted = highlighted
         setAccessibilityLabel(presentation.accessibilityText)
         setFrameSize(intrinsicContentSize)
         needsDisplay = true
     }
 
+    func showClickFeedback() {
+        clickFeedbackGeneration += 1
+        let generation = clickFeedbackGeneration
+        clickFeedbackVisible = true
+        needsDisplay = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            guard let self, self.clickFeedbackGeneration == generation else {
+                return
+            }
+
+            self.clickFeedbackVisible = false
+            self.needsDisplay = true
+        }
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-        if popoverHighlighted {
-            NSColor.selectedContentBackgroundColor.setFill()
+        if clickFeedbackVisible {
+            NSColor.labelColor.withAlphaComponent(0.12).setFill()
             NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 4, yRadius: 4).fill()
         }
 
@@ -57,6 +73,7 @@ final class MenuBarStatusItemView: NSControl {
     }
 
     override func mouseDown(with event: NSEvent) {
+        showClickFeedback()
         sendAction(action, to: target)
     }
 
@@ -149,10 +166,6 @@ final class MenuBarStatusItemView: NSControl {
     }
 
     private func textColor() -> NSColor {
-        if popoverHighlighted {
-            return .selectedMenuItemTextColor
-        }
-
         return NSColor(hex: presentation.style.textColorHex) ?? .labelColor
     }
 

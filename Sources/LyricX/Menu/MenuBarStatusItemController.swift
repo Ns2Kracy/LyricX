@@ -13,7 +13,6 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     private var outsideClickMonitor: Any?
     private var lastFrameRate: MenuBarAnimationFrameRate?
     private var lastPresentation: MenuBarPresentation?
-    private var lastHighlight = false
 
     init(model: AppModel, openMainWindow: @escaping () -> Void) {
         self.model = model
@@ -115,19 +114,17 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
 
     private func render(date: Date, force: Bool) {
         let presentation = model.menuBarPresentation(at: date)
-        let highlighted = popover.isShown
         let needsAnimation = presentation.behavior.isAnimated
-        guard force || needsAnimation || presentation != lastPresentation || highlighted != lastHighlight else {
+        guard force || needsAnimation || presentation != lastPresentation else {
             return
         }
 
-        statusView.update(presentation: presentation, date: date, highlighted: highlighted)
+        statusView.update(presentation: presentation, date: date)
         statusItem.length = statusView.frame.width
         if let button = statusItem.button {
             statusView.frame = button.bounds
         }
         lastPresentation = presentation
-        lastHighlight = highlighted
     }
 }
 
