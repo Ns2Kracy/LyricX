@@ -2,7 +2,6 @@ import Foundation
 
 enum MenuBarTextBehavior: Equatable {
     case staticText
-    case marquee
     case continuousMarquee(contentWidth: Double, startedAt: Date)
 }
 

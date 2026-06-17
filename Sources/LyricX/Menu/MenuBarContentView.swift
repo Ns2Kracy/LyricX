@@ -3,9 +3,8 @@ import SwiftUI
 
 @MainActor
 struct MenuBarContentView: View {
-    @Environment(\.openWindow) private var openWindow
-
     let model: AppModel
+    let openMainWindow: () -> Void
 
     private let elapsedTimeColumnWidth: CGFloat = 30
     private let remainingTimeColumnWidth: CGFloat = 36
@@ -126,7 +125,7 @@ struct MenuBarContentView: View {
     private var utilityMenu: some View {
         Menu {
             Button {
-                openAppWindow(id: "main")
+                openMainWindow()
             } label: {
                 Label("Open LyricX", systemImage: "rectangle.on.rectangle")
             }
@@ -196,12 +195,5 @@ struct MenuBarContentView: View {
     private func formatTime(_ time: TimeInterval) -> String {
         let totalSeconds = max(Int(time), 0)
         return String(format: "%d:%02d", totalSeconds / 60, totalSeconds % 60)
-    }
-
-    private func openAppWindow(id: String) {
-        openWindow(id: id)
-        DispatchQueue.main.async {
-            NSApplication.shared.activate(ignoringOtherApps: true)
-        }
     }
 }

@@ -1,0 +1,113 @@
+import AppKit
+import LyricXCore
+import SwiftUI
+
+@MainActor
+final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
+    private let model: AppModel
+    private let openMainWindow: () -> Void
+    private let statusItem: NSStatusItem
+    private let statusView = MenuBarStatusItemView(frame: .zero)
+    private let popover = NSPopover()
+    private var timer: Timer?
+    private var lastFrameRate: MenuBarAnimationFrameRate?
+    private var lastPresentation: MenuBarPresentation?
+    private var lastHighlight = false
+
+    init(model: AppModel, openMainWindow: @escaping () -> Void) {
+        self.model = model
+        self.openMainWindow = openMainWindow
+        self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        super.init()
+
+        statusView.target = self
+        statusView.action = #selector(togglePopover(_:))
+        if let button = statusItem.button {
+            button.title = ""
+            button.image = nil
+            button.target = self
+            button.action = #selector(togglePopover(_:))
+            statusView.frame = button.bounds
+            statusView.autoresizingMask = [.width, .height]
+            button.addSubview(statusView)
+        }
+
+        popover.behavior = .transient
+        popover.contentSize = NSSize(width: 300, height: 150)
+        popover.delegate = self
+        popover.contentViewController = NSHostingController(
+            rootView: MenuBarContentView(model: model) { [weak self] in
+                self?.closePopoverAndOpenMainWindow()
+            }
+        )
+
+        restartTimer()
+        render(date: Date(), force: true)
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        render(date: Date(), force: true)
+    }
+
+    @objc private func togglePopover(_ sender: Any?) {
+        if popover.isShown {
+            popover.performClose(sender)
+        } else {
+            popover.show(relativeTo: statusView.bounds, of: statusView, preferredEdge: .minY)
+            render(date: Date(), force: true)
+        }
+    }
+
+    private func closePopoverAndOpenMainWindow() {
+        popover.performClose(nil)
+        openMainWindow()
+    }
+
+    private func restartTimer() {
+        timer?.invalidate()
+        let frameRate = model.menuBarFrameRate
+        lastFrameRate = frameRate
+
+        let timer = Timer(timeInterval: frameRate.frameInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.tick()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    private func tick() {
+        if model.menuBarFrameRate != lastFrameRate {
+            restartTimer()
+        }
+
+        render(date: Date(), force: false)
+    }
+
+    private func render(date: Date, force: Bool) {
+        let presentation = model.menuBarPresentation(at: date)
+        let highlighted = popover.isShown
+        let needsAnimation = presentation.behavior.isAnimated
+        guard force || needsAnimation || presentation != lastPresentation || highlighted != lastHighlight else {
+            return
+        }
+
+        statusView.update(presentation: presentation, date: date, highlighted: highlighted)
+        statusItem.length = statusView.frame.width
+        if let button = statusItem.button {
+            statusView.frame = button.bounds
+        }
+        lastPresentation = presentation
+        lastHighlight = highlighted
+    }
+}
+
+private extension MenuBarTextBehavior {
+    var isAnimated: Bool {
+        if case .continuousMarquee = self {
+            return true
+        }
+        return false
+    }
+}

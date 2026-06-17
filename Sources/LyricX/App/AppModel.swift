@@ -16,18 +16,14 @@ final class AppModel {
     var activeStylePresetID = LyricStylePreset.defaults[0].id
     var latestUpdate: AppUpdate?
     var updateStatus = "Updates not checked"
-    var isMainWindowRequested = false
-    var displayTick = 0
 
     @ObservationIgnored private let playbackService: SpotifyPlaybackService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
     @ObservationIgnored private let settingsStore: AppSettingsStore
     @ObservationIgnored private let presetStore: LyricStylePresetStore
     @ObservationIgnored private let updateService: any UpdateService
-    @ObservationIgnored private let marquee = MenuBarMarquee(visibleCharacters: 28)
     @ObservationIgnored private let menuBarTextMetrics = MenuBarTextMetrics()
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
-    @ObservationIgnored private var displayRefreshTask: Task<Void, Never>?
     @ObservationIgnored private var artworkTask: Task<Void, Never>?
     @ObservationIgnored private var lastLyricsTrack: PlaybackTrack?
     @ObservationIgnored private var playbackUpdatedAt = Date()
@@ -80,8 +76,6 @@ final class AppModel {
     }
 
     func menuBarPresentation(at date: Date = Date()) -> MenuBarPresentation {
-        let marqueeOffset = displayTick
-
         guard isLyricsVisible else {
             return MenuBarPresentation(
                 text: "LyricX",
@@ -93,39 +87,30 @@ final class AppModel {
 
         let position = estimatedPlaybackPosition(at: date)
         if let line = timeline?.currentLine(at: position), let lyric = nonBlank(line.text) {
-            let contentWidth = Double(menuBarTextMetrics.width(for: lyric))
-            let isMarquee = contentWidth > Double(MenuBarTextMetrics.viewportWidth)
-            let behavior = isMarquee
-                ? MenuBarTextBehavior.continuousMarquee(
-                    contentWidth: contentWidth,
-                    startedAt: lyricStartedAt(for: line, position: position, date: date)
-                )
-                : .staticText
+            let startedAt = lyricStartedAt(for: line, position: position, date: date)
             return MenuBarPresentation(
                 text: lyric,
                 accessibilityText: lyric,
                 symbol: nil,
-                behavior: behavior
+                behavior: menuBarBehavior(for: lyric, startedAt: startedAt)
             )
         }
 
         if let track = playback.track, showsTrackWhenLyricsMissing {
             let title = "\(track.title) - \(track.artist)"
-            let isMarquee = title.count > marquee.visibleCharacters
             return MenuBarPresentation(
-                text: isMarquee ? marquee.displayText(title, offset: marqueeOffset) : title,
+                text: title,
                 accessibilityText: title,
                 symbol: nil,
-                behavior: isMarquee ? .marquee : .staticText
+                behavior: menuBarBehavior(for: title, startedAt: .menuBarReferenceStart)
             )
         }
 
-        let isMarquee = lyricsStatus.count > marquee.visibleCharacters
         return MenuBarPresentation(
-            text: isMarquee ? marquee.displayText(lyricsStatus, offset: marqueeOffset) : lyricsStatus,
+            text: lyricsStatus,
             accessibilityText: lyricsStatus,
             symbol: menuBarSymbol,
-            behavior: isMarquee ? .marquee : .staticText
+            behavior: menuBarBehavior(for: lyricsStatus, startedAt: .menuBarReferenceStart)
         )
     }
 
@@ -148,12 +133,10 @@ final class AppModel {
         settings = (try? settingsStore.load()) ?? .default
         loadPresetState()
         startPolling()
-        startDisplayRefresh()
     }
 
     deinit {
         pollingTask?.cancel()
-        displayRefreshTask?.cancel()
         artworkTask?.cancel()
     }
 
@@ -166,19 +149,6 @@ final class AppModel {
             while !Task.isCancelled {
                 await self?.pollOnce()
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
-            }
-        }
-    }
-
-    func startDisplayRefresh() {
-        guard displayRefreshTask == nil else {
-            return
-        }
-
-        displayRefreshTask = Task { [weak self] in
-            while !Task.isCancelled {
-                self?.displayTick = ((self?.displayTick ?? 0) + 1) % 10_000
-                try? await Task.sleep(nanoseconds: 180_000_000)
             }
         }
     }
@@ -344,6 +314,15 @@ final class AppModel {
         date.addingTimeInterval(line.time - position)
     }
 
+    private func menuBarBehavior(for text: String, startedAt: Date) -> MenuBarTextBehavior {
+        let contentWidth = Double(menuBarTextMetrics.width(for: text))
+        guard contentWidth > Double(MenuBarTextMetrics.viewportWidth) else {
+            return .staticText
+        }
+
+        return .continuousMarquee(contentWidth: contentWidth, startedAt: startedAt)
+    }
+
     private func nonBlank(_ text: String?) -> String? {
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
@@ -395,4 +374,8 @@ final class AppModel {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0"
         return AppVersion(version)
     }
+}
+
+private extension Date {
+    static let menuBarReferenceStart = Date(timeIntervalSinceReferenceDate: 0)
 }
