@@ -7,7 +7,7 @@ It is built with SwiftUI and Swift Package Manager. The repository does not requ
 ## Features
 
 - Shows the current synced lyric line in the macOS menu bar.
-- Provides a main LyricX window with track status, lyric preview, artwork placeholder, and playback controls.
+- Provides a main LyricX window with track status, lyric preview, artwork, playback controls, and settings.
 - Includes settings for lyric style presets, menu-bar width, font size, color, alignment, and missing-lyrics fallback behavior.
 - Falls back to the current Spotify track name when synced lyrics are missing.
 - Hides the menu-bar icon when lyric or track text is available, and shows the icon only as the empty-state fallback.
@@ -49,17 +49,17 @@ Launch the app:
 open dist/LyricX.app
 ```
 
-LyricX opens a main window and also keeps the lyric line in the menu bar. Open the menu-bar item to show the main window, open settings, control Spotify playback, refresh lyrics, toggle lyric text, show the track name when lyrics are missing, or quit.
+LyricX opens a main window and also keeps the lyric line in the menu bar. Open the menu-bar item to show the main window, control Spotify playback, refresh lyrics, toggle lyric text, show the track name when lyrics are missing, or quit. Settings live in the main window's Settings tab.
 
 ## Main Window
 
-The main window shows the current Spotify track, playback state, previous/current/next lyric context, the active style preset, update status, and playback controls for previous, play/pause, next, and lyric refresh.
+The main window has a Now Playing tab and a Settings tab. Now Playing shows the current Spotify track, playback state, previous/current/next lyric context, the active style preset, update status, and playback controls for previous, play/pause, next, and lyric refresh.
 
 Spotify artwork is loaded when the current track exposes an artwork URL. LyricX falls back to a compact placeholder when artwork is unavailable.
 
 ## Settings
 
-Open settings from the menu-bar item. Settings currently include:
+Open the main LyricX window and choose the Settings tab. Settings currently include:
 
 - Lyric style preset selection and editing.
 - Menu-bar width, font size, font weight, text color, alignment, and missing-lyrics fallback behavior.
@@ -116,8 +116,8 @@ The CI workflow uploads `LyricX.zip` and `LyricX.zip.sha256` as a build artifact
 Create and publish a GitHub release by pushing a version tag:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 The release workflow builds the app, packages the zip and checksum, then creates a GitHub Release with generated notes.
