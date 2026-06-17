@@ -17,6 +17,9 @@ struct LyricXUnitTests {
         try testMenuBarMarqueeShowsFinalWindowBeforeLineSwitch()
         try testMenuBarMarqueeCalculatesContinuousScrollOffset()
         try testMenuBarMarqueeClampsContinuousScrollProgress()
+        try testMenuBarAnimationFrameRatesExposeSupportedValues()
+        try testMenuBarAnimationFrameRateIntervals()
+        try testMenuBarAnimationFrameRateCodableRoundTrip()
         try testSpotifyControlScriptForPlayPause()
         try testSpotifyControlScriptForNextTrack()
         try testSpotifyControlScriptForPreviousTrack()
@@ -135,6 +138,25 @@ struct LyricXUnitTests {
     private static func testMenuBarMarqueeClampsContinuousScrollProgress() throws {
         try expectEqual(MenuBarMarquee.scrollOffset(progress: -1.0, contentWidth: 300, visibleWidth: 220), 0)
         try expectEqual(MenuBarMarquee.scrollOffset(progress: 2.0, contentWidth: 300, visibleWidth: 220), -80)
+    }
+
+    private static func testMenuBarAnimationFrameRatesExposeSupportedValues() throws {
+        try expectEqual(MenuBarAnimationFrameRate.allCases, [.fps15, .fps30, .fps60, .fps120])
+        try expectEqual(MenuBarAnimationFrameRate.default, .fps30)
+    }
+
+    private static func testMenuBarAnimationFrameRateIntervals() throws {
+        try expectEqual(MenuBarAnimationFrameRate.fps15.frameInterval, 1.0 / 15.0)
+        try expectEqual(MenuBarAnimationFrameRate.fps30.frameInterval, 1.0 / 30.0)
+        try expectEqual(MenuBarAnimationFrameRate.fps60.frameInterval, 1.0 / 60.0)
+        try expectEqual(MenuBarAnimationFrameRate.fps120.frameInterval, 1.0 / 120.0)
+    }
+
+    private static func testMenuBarAnimationFrameRateCodableRoundTrip() throws {
+        let data = try JSONEncoder().encode(MenuBarAnimationFrameRate.fps120)
+        let decoded = try JSONDecoder().decode(MenuBarAnimationFrameRate.self, from: data)
+
+        try expectEqual(decoded, .fps120)
     }
 
     private static func testSpotifyControlScriptForPlayPause() throws {
