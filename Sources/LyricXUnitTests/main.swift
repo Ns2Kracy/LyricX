@@ -30,6 +30,8 @@ struct LyricXUnitTests {
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetCodableRoundTrip()
         try testStylePresetStoreSavesAndLoadsSelection()
+        try testAppSettingsDefaultFrameRateIsThirtyFPS()
+        try testAppSettingsStoreSavesAndLoadsFrameRate()
         try testAppVersionComparisonFindsNewerPatch()
         try testAppVersionIgnoresLeadingV()
         try testGitHubReleaseDecoderFindsPackageAsset()
@@ -253,6 +255,23 @@ struct LyricXUnitTests {
         try? FileManager.default.removeItem(at: url)
         try expectEqual(loaded.activePresetID, preset.id)
         try expectEqual(loaded.presets, LyricStylePreset.defaults)
+    }
+
+    private static func testAppSettingsDefaultFrameRateIsThirtyFPS() throws {
+        try expectEqual(AppSettings.default.menuBarFrameRate, .fps30)
+    }
+
+    private static func testAppSettingsStoreSavesAndLoadsFrameRate() throws {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        let store = AppSettingsStore(fileURL: url)
+        var settings = AppSettings.default
+        settings.menuBarFrameRate = .fps120
+
+        try store.save(settings)
+        let loaded = try store.load()
+
+        try? FileManager.default.removeItem(at: url)
+        try expectEqual(loaded, settings)
     }
 
     private static func testAppVersionComparisonFindsNewerPatch() throws {

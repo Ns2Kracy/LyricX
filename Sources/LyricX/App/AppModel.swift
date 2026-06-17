@@ -5,7 +5,7 @@ import Observation
 @MainActor
 @Observable
 final class AppModel {
-    var settings = AppSettings()
+    var settings = AppSettings.default
     var playback = PlaybackSnapshot(state: .notRunning, message: "Waiting for Spotify")
     var timeline: LyricTimeline?
     var currentLine: LyricLine?
@@ -21,6 +21,7 @@ final class AppModel {
 
     @ObservationIgnored private let playbackService: SpotifyPlaybackService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
+    @ObservationIgnored private let settingsStore: AppSettingsStore
     @ObservationIgnored private let presetStore: LyricStylePresetStore
     @ObservationIgnored private let updateService: any UpdateService
     @ObservationIgnored private let marquee = MenuBarMarquee(visibleCharacters: 28)
@@ -32,12 +33,26 @@ final class AppModel {
 
     var isLyricsVisible: Bool {
         get { settings.showsLyrics }
-        set { settings.showsLyrics = newValue }
+        set {
+            settings.showsLyrics = newValue
+            persistSettings()
+        }
     }
 
     var showsTrackWhenLyricsMissing: Bool {
         get { settings.showsTrackWhenLyricsMissing }
-        set { settings.showsTrackWhenLyricsMissing = newValue }
+        set {
+            settings.showsTrackWhenLyricsMissing = newValue
+            persistSettings()
+        }
+    }
+
+    var menuBarFrameRate: MenuBarAnimationFrameRate {
+        get { settings.menuBarFrameRate }
+        set {
+            settings.menuBarFrameRate = newValue
+            persistSettings()
+        }
     }
 
     var activeStylePreset: LyricStylePreset {
@@ -109,6 +124,7 @@ final class AppModel {
     init(
         playbackService: SpotifyPlaybackService = SpotifyPlaybackService(),
         lyricsRepository: LyricsRepository = LyricsRepository(),
+        settingsStore: AppSettingsStore = AppSettingsStore(fileURL: AppModel.defaultSettingsStoreURL()),
         presetStore: LyricStylePresetStore = LyricStylePresetStore(fileURL: AppModel.defaultPresetStoreURL()),
         updateService: any UpdateService = GitHubReleaseUpdateService(
             owner: "ns2kracy",
@@ -118,8 +134,10 @@ final class AppModel {
     ) {
         self.playbackService = playbackService
         self.lyricsRepository = lyricsRepository
+        self.settingsStore = settingsStore
         self.presetStore = presetStore
         self.updateService = updateService
+        settings = (try? settingsStore.load()) ?? .default
         loadPresetState()
         startPolling()
         startDisplayRefresh()
@@ -359,6 +377,17 @@ final class AppModel {
 
     private func persistPresetState() {
         try? presetStore.save(presets: stylePresets, activePresetID: activeStylePresetID)
+    }
+
+    private func persistSettings() {
+        try? settingsStore.save(settings)
+    }
+
+    private static func defaultSettingsStoreURL() -> URL {
+        let baseURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return baseURL
+            .appendingPathComponent("LyricX", isDirectory: true)
+            .appendingPathComponent("app-settings.json")
     }
 
     private static func defaultPresetStoreURL() -> URL {
