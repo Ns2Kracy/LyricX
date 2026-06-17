@@ -25,6 +25,7 @@ final class AppModel {
     @ObservationIgnored private let presetStore: LyricStylePresetStore
     @ObservationIgnored private let updateService: any UpdateService
     @ObservationIgnored private let marquee = MenuBarMarquee(visibleCharacters: 28)
+    @ObservationIgnored private let menuBarTextMetrics = MenuBarTextMetrics()
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var displayRefreshTask: Task<Void, Never>?
     @ObservationIgnored private var artworkTask: Task<Void, Never>?
@@ -92,12 +93,19 @@ final class AppModel {
 
         let position = estimatedPlaybackPosition(at: date)
         if let line = timeline?.currentLine(at: position), let lyric = nonBlank(line.text) {
-            let isMarquee = lyric.count > marquee.visibleCharacters
+            let contentWidth = Double(menuBarTextMetrics.width(for: lyric))
+            let isMarquee = contentWidth > Double(MenuBarTextMetrics.viewportWidth)
+            let behavior = isMarquee
+                ? MenuBarTextBehavior.continuousMarquee(
+                    contentWidth: contentWidth,
+                    startedAt: lyricStartedAt(for: line, position: position, date: date)
+                )
+                : .staticText
             return MenuBarPresentation(
                 text: lyric,
                 accessibilityText: lyric,
                 symbol: nil,
-                behavior: isMarquee ? .continuousMarquee(progress: lyricProgress(for: line, at: position)) : .staticText
+                behavior: behavior
             )
         }
 
@@ -332,22 +340,8 @@ final class AppModel {
         return estimatedPosition
     }
 
-    private func lyricProgress(for line: LyricLine, at position: TimeInterval) -> Double {
-        let endTime = nextLineEndTime(for: line, at: position)
-        let duration = max(endTime - line.time, 0.5)
-        return min(max((position - line.time) / duration, 0), 1)
-    }
-
-    private func nextLineEndTime(for line: LyricLine, at position: TimeInterval) -> TimeInterval {
-        if let nextLine = timeline?.nextLine(after: position) {
-            return nextLine.time
-        }
-
-        if let duration = playback.track?.duration, duration > line.time {
-            return duration
-        }
-
-        return line.time + 6.0
+    private func lyricStartedAt(for line: LyricLine, position: TimeInterval, date: Date) -> Date {
+        date.addingTimeInterval(line.time - position)
     }
 
     private func nonBlank(_ text: String?) -> String? {

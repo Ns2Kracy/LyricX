@@ -3,10 +3,9 @@ import SwiftUI
 
 struct MenuBarLabelView: View {
     let presentation: MenuBarPresentation
+    let date: Date
 
-    @State private var continuousTextWidth: CGFloat = 0
-
-    private let fixedTextWidth: CGFloat = 220
+    private let fixedTextWidth = MenuBarTextMetrics.viewportWidth
 
     var body: some View {
         HStack(spacing: 4) {
@@ -22,11 +21,11 @@ struct MenuBarLabelView: View {
     @ViewBuilder
     private var labelText: some View {
         switch presentation.behavior {
-        case .continuousMarquee(let progress):
-            continuousMarqueeText(progress: progress)
+        case .continuousMarquee(let contentWidth, let startedAt):
+            continuousMarqueeText(contentWidth: contentWidth, startedAt: startedAt)
         case .staticText, .marquee:
             Text(presentation.text)
-                .font(.system(size: 13, weight: .medium))
+                .font(Self.font)
                 .lineLimit(1)
                 .frame(width: usesFixedTextWidth ? fixedTextWidth : nil, alignment: .leading)
                 .fixedSize(horizontal: !usesFixedTextWidth, vertical: false)
@@ -34,30 +33,20 @@ struct MenuBarLabelView: View {
         }
     }
 
-    private func continuousMarqueeText(progress: Double) -> some View {
-        let offset = CGFloat(MenuBarMarquee.scrollOffset(
-            progress: progress,
-            contentWidth: Double(continuousTextWidth),
-            visibleWidth: Double(fixedTextWidth)
-        ))
+    private func continuousMarqueeText(contentWidth: Double, startedAt: Date) -> some View {
+        let marquee = MenuBarTimelineMarquee(viewportWidth: Double(fixedTextWidth))
+        let offset = CGFloat(marquee.offset(elapsedTime: date.timeIntervalSince(startedAt), contentWidth: contentWidth))
+        let gap = CGFloat(marquee.gap)
 
         return ZStack(alignment: .leading) {
-            Text(presentation.text)
-                .font(.system(size: 13, weight: .medium))
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-                .background(TextWidthReader())
-                .offset(x: offset)
+            marqueeText.offset(x: offset)
+
+            if contentWidth > Double(fixedTextWidth) {
+                marqueeText.offset(x: offset + CGFloat(contentWidth) + gap)
+            }
         }
-        .frame(width: fixedTextWidth, alignment: .leading)
+        .frame(width: fixedTextWidth, height: 18, alignment: .leading)
         .clipped()
-        .onPreferenceChange(TextWidthPreferenceKey.self) { width in
-            continuousTextWidth = width
-        }
-        .onChange(of: presentation.text) { _, _ in
-            continuousTextWidth = 0
-        }
-        .animation(.linear(duration: 0.18), value: offset)
     }
 
     private var usesFixedTextWidth: Bool {
@@ -66,20 +55,13 @@ struct MenuBarLabelView: View {
         }
         return presentation.symbol == nil || presentation.behavior == .marquee
     }
-}
 
-private struct TextWidthPreferenceKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+    private var marqueeText: some View {
+        Text(presentation.text)
+            .font(Self.font)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
     }
-}
 
-private struct TextWidthReader: View {
-    var body: some View {
-        GeometryReader { proxy in
-            Color.clear.preference(key: TextWidthPreferenceKey.self, value: proxy.size.width)
-        }
-    }
+    private static let font = Font.system(size: MenuBarTextMetrics.fontSize, weight: .medium)
 }

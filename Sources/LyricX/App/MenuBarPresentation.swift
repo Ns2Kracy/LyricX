@@ -3,7 +3,7 @@ import Foundation
 enum MenuBarTextBehavior: Equatable {
     case staticText
     case marquee
-    case continuousMarquee(progress: Double)
+    case continuousMarquee(contentWidth: Double, startedAt: Date)
 }
 
 struct MenuBarPresentation: Equatable {

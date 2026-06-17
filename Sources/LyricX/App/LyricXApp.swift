@@ -15,7 +15,15 @@ struct LyricXApp: App {
         MenuBarExtra {
             MenuBarContentView(model: container.model)
         } label: {
-            MenuBarLabelView(presentation: container.model.menuBarPresentation())
+            TimelineView(.periodic(
+                from: Date(timeIntervalSinceReferenceDate: 0),
+                by: container.model.menuBarFrameRate.frameInterval
+            )) { context in
+                MenuBarLabelView(
+                    presentation: container.model.menuBarPresentation(at: context.date),
+                    date: context.date
+                )
+            }
         }
         .menuBarExtraStyle(.window)
     }
