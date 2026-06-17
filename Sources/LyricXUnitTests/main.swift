@@ -34,6 +34,8 @@ struct LyricXUnitTests {
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetDerivesMenuBarStyle()
         try testMenuBarBehaviorUsesPresetWidth()
+        try testMenuBarLayoutUsesPresetWidthAsTextBoundsWithoutAccessory()
+        try testMenuBarLayoutKeepsPresetWidthAsTextBoundsWithAccessory()
         try testStylePresetCodableRoundTrip()
         try testStylePresetStoreSavesAndLoadsSelection()
         try testAppSettingsDefaultFrameRateIsThirtyFPS()
@@ -293,6 +295,22 @@ struct LyricXUnitTests {
 
         try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: compact, startedAt: startedAt), .continuousMarquee(contentWidth: 240, startedAt: startedAt))
         try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: wide, startedAt: startedAt), .staticText)
+    }
+
+    private static func testMenuBarLayoutUsesPresetWidthAsTextBoundsWithoutAccessory() throws {
+        let layout = MenuBarStatusItemLayout(viewportWidth: 220, horizontalPadding: 8, leadingAccessoryWidth: 0)
+
+        try expectEqual(layout.statusItemWidth, 220)
+        try expectEqual(layout.textViewportMinX, 0)
+        try expectEqual(layout.textViewportWidth, 220)
+    }
+
+    private static func testMenuBarLayoutKeepsPresetWidthAsTextBoundsWithAccessory() throws {
+        let layout = MenuBarStatusItemLayout(viewportWidth: 220, horizontalPadding: 8, leadingAccessoryWidth: 18)
+
+        try expectEqual(layout.statusItemWidth, 254)
+        try expectEqual(layout.textViewportMinX, 26)
+        try expectEqual(layout.textViewportWidth, 220)
     }
 
     private static func testStylePresetCodableRoundTrip() throws {

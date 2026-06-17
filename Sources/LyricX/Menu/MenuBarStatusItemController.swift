@@ -10,6 +10,7 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     private let statusView = MenuBarStatusItemView(frame: .zero)
     private let popover = NSPopover()
     private var timer: Timer?
+    private var outsideClickMonitor: Any?
     private var lastFrameRate: MenuBarAnimationFrameRate?
     private var lastPresentation: MenuBarPresentation?
     private var lastHighlight = false
@@ -46,6 +47,7 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     }
 
     func popoverDidClose(_ notification: Notification) {
+        stopOutsideClickMonitor()
         render(date: Date(), force: true)
     }
 
@@ -54,6 +56,7 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
             popover.performClose(sender)
         } else {
             popover.show(relativeTo: statusView.bounds, of: statusView, preferredEdge: .minY)
+            startOutsideClickMonitor()
             render(date: Date(), force: true)
         }
     }
@@ -61,6 +64,31 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     private func closePopoverAndOpenMainWindow() {
         popover.performClose(nil)
         openMainWindow()
+    }
+
+    private func startOutsideClickMonitor() {
+        guard outsideClickMonitor == nil else {
+            return
+        }
+
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.popover.isShown else {
+                    return
+                }
+
+                self.popover.performClose(nil)
+            }
+        }
+    }
+
+    private func stopOutsideClickMonitor() {
+        guard let outsideClickMonitor else {
+            return
+        }
+
+        NSEvent.removeMonitor(outsideClickMonitor)
+        self.outsideClickMonitor = nil
     }
 
     private func restartTimer() {

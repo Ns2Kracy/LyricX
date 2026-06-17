@@ -48,19 +48,12 @@ final class MenuBarStatusItemView: NSControl {
 
         let color = textColor()
         let textRect = textDrawingRect()
-        var textOriginX = textRect.minX
 
         if let symbol = presentation.symbol {
             drawSymbol(named: symbol, color: color)
-            textOriginX += iconSize + iconSpacing
         }
 
-        drawText(in: NSRect(
-            x: textOriginX,
-            y: textRect.minY,
-            width: textRect.maxX - textOriginX,
-            height: textRect.height
-        ), color: color)
+        drawText(in: textRect, color: color)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -68,18 +61,25 @@ final class MenuBarStatusItemView: NSControl {
     }
 
     private func width(for presentation: MenuBarPresentation) -> CGFloat {
-        let textWidth = CGFloat(presentation.style.viewportWidth)
-        let iconWidth = presentation.symbol == nil ? 0 : iconSize + iconSpacing
-        return max(24, horizontalPadding * 2 + iconWidth + textWidth)
+        CGFloat(max(24, layout(for: presentation).statusItemWidth))
     }
 
     private func textDrawingRect() -> NSRect {
+        let layout = layout(for: presentation)
         let height = attributedText(color: .labelColor).size().height
         return NSRect(
-            x: horizontalPadding,
+            x: CGFloat(layout.textViewportMinX),
             y: floor((bounds.height - height) / 2),
-            width: max(bounds.width - horizontalPadding * 2, 1),
+            width: CGFloat(layout.textViewportWidth),
             height: height
+        )
+    }
+
+    private func layout(for presentation: MenuBarPresentation) -> MenuBarStatusItemLayout {
+        MenuBarStatusItemLayout(
+            viewportWidth: presentation.style.viewportWidth,
+            horizontalPadding: Double(horizontalPadding),
+            leadingAccessoryWidth: presentation.symbol == nil ? 0 : Double(iconSize + iconSpacing)
         )
     }
 

@@ -36,6 +36,38 @@ public struct MenuBarStyle: Equatable, Sendable {
     )
 }
 
+public struct MenuBarStatusItemLayout: Equatable, Sendable {
+    public var viewportWidth: Double
+    public var horizontalPadding: Double
+    public var leadingAccessoryWidth: Double
+
+    public init(viewportWidth: Double, horizontalPadding: Double, leadingAccessoryWidth: Double) {
+        self.viewportWidth = max(viewportWidth, 1)
+        self.horizontalPadding = max(horizontalPadding, 0)
+        self.leadingAccessoryWidth = max(leadingAccessoryWidth, 0)
+    }
+
+    public var statusItemWidth: Double {
+        guard leadingAccessoryWidth > 0 else {
+            return viewportWidth
+        }
+
+        return horizontalPadding * 2 + leadingAccessoryWidth + viewportWidth
+    }
+
+    public var textViewportMinX: Double {
+        guard leadingAccessoryWidth > 0 else {
+            return 0
+        }
+
+        return horizontalPadding + leadingAccessoryWidth
+    }
+
+    public var textViewportWidth: Double {
+        viewportWidth
+    }
+}
+
 public enum MenuBarTextBehavior: Equatable, Sendable {
     case staticText
     case continuousMarquee(contentWidth: Double, startedAt: Date)
