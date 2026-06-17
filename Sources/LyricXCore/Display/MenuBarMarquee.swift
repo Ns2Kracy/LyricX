@@ -29,7 +29,7 @@ public struct MenuBarMarquee: Sendable {
         let characters = Array(trimmed)
         let maxStart = characters.count - visibleCharacters
         let clampedProgress = min(max(progress, 0), 1)
-        let start = min(Int((Double(maxStart) * clampedProgress).rounded(.down)), maxStart)
+        let start = min(Int((Double(maxStart + 1) * clampedProgress).rounded(.down)), maxStart)
         return String(characters[start..<(start + visibleCharacters)])
     }
 }
