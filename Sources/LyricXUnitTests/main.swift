@@ -13,6 +13,9 @@ struct LyricXUnitTests {
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
         try testTimelineReturnsNextLineAfterPosition()
         try testTimelineContextReturnsPreviousCurrentAndNextLine()
+        try testTrackScopedLyricLoadRejectsStaleTrack()
+        try testTrackScopedLyricLoadRejectsSupersededRequest()
+        try testTrackScopedLyricLoadAcceptsCurrentTrack()
         try testMenuBarMarqueeKeepsShortTextWhole()
         try testMenuBarMarqueeReturnsFixedWindowForLongText()
         try testMenuBarMarqueeReturnsTimedWindowForLongLyric()
@@ -128,6 +131,47 @@ struct LyricXUnitTests {
         try expectEqual(context.previousLine, LyricLine(time: 10.0, text: "First"))
         try expectEqual(context.currentLine, LyricLine(time: 20.0, text: "Second"))
         try expectEqual(context.nextLine, LyricLine(time: 30.0, text: "Third"))
+    }
+
+    private static func testTrackScopedLyricLoadRejectsStaleTrack() throws {
+        let staleTrack = PlaybackTrack(title: "Old Song", artist: "Artist")
+        let currentTrack = PlaybackTrack(title: "New Song", artist: "Artist")
+
+        try expectEqual(
+            TrackScopedLyricLoad.canApply(
+                loadedFor: staleTrack,
+                currentTrack: currentTrack,
+                requestedTrack: currentTrack
+            ),
+            false
+        )
+    }
+
+    private static func testTrackScopedLyricLoadRejectsSupersededRequest() throws {
+        let loadedTrack = PlaybackTrack(title: "Loaded Song", artist: "Artist")
+        let requestedTrack = PlaybackTrack(title: "Requested Song", artist: "Artist")
+
+        try expectEqual(
+            TrackScopedLyricLoad.canApply(
+                loadedFor: loadedTrack,
+                currentTrack: loadedTrack,
+                requestedTrack: requestedTrack
+            ),
+            false
+        )
+    }
+
+    private static func testTrackScopedLyricLoadAcceptsCurrentTrack() throws {
+        let currentTrack = PlaybackTrack(title: "Current Song", artist: "Artist")
+
+        try expectEqual(
+            TrackScopedLyricLoad.canApply(
+                loadedFor: currentTrack,
+                currentTrack: currentTrack,
+                requestedTrack: currentTrack
+            ),
+            true
+        )
     }
 
     private static func testMenuBarMarqueeKeepsShortTextWhole() throws {

@@ -273,9 +273,17 @@ final class AppModel {
             lyricsStatus = "Finding synced lyrics"
             loadArtwork(for: track)
             await loadLyrics(for: track, bypassCache: false)
+
+            guard TrackScopedLyricLoad.canApply(
+                loadedFor: track,
+                currentTrack: playback.track,
+                requestedTrack: lastLyricsTrack
+            ) else {
+                return
+            }
         }
 
-        updateActiveLines(at: snapshot.position)
+        updateActiveLines(at: playback.position)
     }
 
     private func loadLyrics(for track: PlaybackTrack, bypassCache: Bool) async {
@@ -284,6 +292,14 @@ final class AppModel {
             loadedTimeline = await lyricsRepository.refreshTimeline(for: track)
         } else {
             loadedTimeline = await lyricsRepository.timeline(for: track)
+        }
+
+        guard TrackScopedLyricLoad.canApply(
+            loadedFor: track,
+            currentTrack: playback.track,
+            requestedTrack: lastLyricsTrack
+        ) else {
+            return
         }
 
         timeline = loadedTimeline
