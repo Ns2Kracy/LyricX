@@ -160,10 +160,6 @@ final class MenuBarStatusItemView: NSControl {
             let marquee = MenuBarTimelineMarquee(viewportWidth: Double(rect.width))
             let offset = CGFloat(marquee.offset(elapsedTime: date.timeIntervalSince(startedAt), contentWidth: contentWidth))
             text.draw(at: NSPoint(x: rect.minX + offset, y: rect.minY))
-
-            if contentWidth > Double(rect.width) {
-                text.draw(at: NSPoint(x: rect.minX + offset + CGFloat(contentWidth) + CGFloat(marquee.gap), y: rect.minY))
-            }
         case .staticText:
             text.draw(at: NSPoint(x: alignedTextX(for: text, in: rect), y: rect.minY))
         }

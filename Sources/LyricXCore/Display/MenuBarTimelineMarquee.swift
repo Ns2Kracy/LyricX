@@ -17,7 +17,7 @@ public struct MenuBarTimelineMarquee: Equatable, Sendable {
         guard contentWidth > viewportWidth else {
             return startPause
         }
-        return startPause + TimeInterval((contentWidth + gap) / speed)
+        return startPause + TimeInterval((contentWidth - viewportWidth) / speed)
     }
 
     public func offset(elapsedTime: TimeInterval, contentWidth: Double) -> Double {
@@ -25,14 +25,12 @@ public struct MenuBarTimelineMarquee: Equatable, Sendable {
             return 0
         }
 
-        let cycle = cycleDuration(contentWidth: contentWidth)
-        let cycleTime = elapsedTime.truncatingRemainder(dividingBy: cycle)
-        guard cycleTime > startPause else {
+        guard elapsedTime > startPause else {
             return 0
         }
 
-        let movingTime = cycleTime - startPause
-        let travel = contentWidth + gap
+        let movingTime = elapsedTime - startPause
+        let travel = contentWidth - viewportWidth
         return -min(travel, movingTime * speed)
     }
 }

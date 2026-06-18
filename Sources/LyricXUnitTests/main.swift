@@ -22,7 +22,7 @@ struct LyricXUnitTests {
         try testMenuBarAnimationFrameRateCodableRoundTrip()
         try testTimelineMarqueeOffsetPausesBeforeMoving()
         try testTimelineMarqueeOffsetMovesAtConfiguredSpeed()
-        try testTimelineMarqueeOffsetWrapsAfterCycle()
+        try testTimelineMarqueeOffsetStopsAtEnd()
         try testTimelineMarqueeOffsetStaysZeroWithoutOverflow()
         try testSpotifyControlScriptForPlayPause()
         try testSpotifyControlScriptForNextTrack()
@@ -185,11 +185,10 @@ struct LyricXUnitTests {
         try expectEqual(marquee.offset(elapsedTime: 1.8, contentWidth: 320), -34)
     }
 
-    private static func testTimelineMarqueeOffsetWrapsAfterCycle() throws {
+    private static func testTimelineMarqueeOffsetStopsAtEnd() throws {
         let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
-        let cycleDuration = marquee.cycleDuration(contentWidth: 320)
 
-        try expectEqual(marquee.offset(elapsedTime: cycleDuration + 0.4, contentWidth: 320), 0)
+        try expectEqual(marquee.offset(elapsedTime: 10, contentWidth: 320), -100)
     }
 
     private static func testTimelineMarqueeOffsetStaysZeroWithoutOverflow() throws {
