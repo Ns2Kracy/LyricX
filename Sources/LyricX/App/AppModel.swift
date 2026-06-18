@@ -130,6 +130,10 @@ final class AppModel {
         return timeline.context(at: estimatedPlaybackPosition(at: date))
     }
 
+    func refreshLyricContext(at date: Date = Date()) {
+        updateActiveLines(at: estimatedPlaybackPosition(at: date))
+    }
+
     init(
         playbackService: SpotifyAppleScriptPlaybackService = SpotifyAppleScriptPlaybackService(),
         lyricsRepository: LyricsRepository = LyricsRepository(),
@@ -310,8 +314,13 @@ final class AppModel {
     }
 
     private func updateActiveLines(at position: TimeInterval) {
-        currentLine = timeline?.currentLine(at: position)
-        nextLine = timeline?.nextLine(after: position)
+        let context = timeline?.context(at: position) ?? .empty
+        if currentLine != context.currentLine {
+            currentLine = context.currentLine
+        }
+        if nextLine != context.nextLine {
+            nextLine = context.nextLine
+        }
     }
 
     private func estimatedPlaybackPosition(at date: Date) -> TimeInterval {

@@ -115,6 +115,7 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     }
 
     private func render(date: Date, force: Bool) {
+        model.refreshLyricContext(at: date)
         let presentation = model.menuBarPresentation(at: date)
         let needsAnimation = presentation.behavior.isAnimated
         guard force || needsAnimation || presentation != lastPresentation else {
