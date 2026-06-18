@@ -65,11 +65,26 @@ struct SettingsView: View {
             }
 
             Section("Floating Lyrics") {
-                Toggle("Floating Lyrics", isOn: .constant(false))
-                    .disabled(true)
+                Toggle("Show Floating Lyrics", isOn: $model.showsFloatingLyrics)
+                Toggle("Lock Position", isOn: $model.floatingLyricsLocked)
+                Toggle("Click Through", isOn: $model.floatingLyricsClickThrough)
+                Toggle("KTV Mode", isOn: $model.floatingLyricsKTVEnabled)
 
-                Text("Coming later")
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Text("Background Opacity")
+                        .frame(width: 150, alignment: .leading)
+
+                    Slider(value: $model.floatingLyricsBackgroundOpacity, in: 0...1, step: 0.05)
+
+                    Text("\(Int(model.floatingLyricsBackgroundOpacity * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 42, alignment: .trailing)
+                }
+
+                offsetStepper("Lyric Offset", value: $model.floatingLyricsLyricOffsetMs)
+                offsetStepper("Line Offset", value: $model.floatingLyricsLineOffsetMs)
+                offsetStepper("KTV Segment Offset", value: $model.floatingLyricsSegmentOffsetMs)
             }
         }
         .formStyle(.grouped)
@@ -90,5 +105,17 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
         }
         .disabled(true)
+    }
+
+    private func offsetStepper(_ title: String, value: Binding<Int>) -> some View {
+        Stepper(value: value, in: -5000...5000, step: 10) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text("\(value.wrappedValue) ms")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
