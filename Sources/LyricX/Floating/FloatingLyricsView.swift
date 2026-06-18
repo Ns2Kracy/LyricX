@@ -24,15 +24,13 @@ struct FloatingLyricsView: View {
                     .minimumScaleFactor(0.7)
             }
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, 28)
         .padding(.vertical, 14)
         .frame(width: 720, height: 112)
         .background(
-            Capsule(style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color.black.opacity(presentation.backgroundOpacity))
         )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(presentation.currentText)
     }
 
     private var ktvLine: some View {
