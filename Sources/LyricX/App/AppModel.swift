@@ -18,7 +18,7 @@ final class AppModel {
     var latestUpdate: AppUpdate?
     var updateStatus = "Updates not checked"
 
-    @ObservationIgnored private let playbackService: any PlaybackArtworkService
+    @ObservationIgnored private let playbackService: SpotifyAppleScriptPlaybackService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
     @ObservationIgnored private let settingsStore: AppSettingsStore
     @ObservationIgnored private let presetStore: LyricStylePresetStore
@@ -123,7 +123,7 @@ final class AppModel {
     }
 
     init(
-        playbackService: any PlaybackArtworkService = SpotifyAppleScriptPlaybackService(),
+        playbackService: SpotifyAppleScriptPlaybackService = SpotifyAppleScriptPlaybackService(),
         lyricsRepository: LyricsRepository = LyricsRepository(),
         settingsStore: AppSettingsStore = AppSettingsStore(fileURL: AppModel.defaultSettingsStoreURL()),
         presetStore: LyricStylePresetStore = LyricStylePresetStore(fileURL: AppModel.defaultPresetStoreURL()),
@@ -342,7 +342,7 @@ final class AppModel {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    private func runPlayerCommand(_ command: @escaping @Sendable (any PlaybackArtworkService) -> Void) {
+    private func runPlayerCommand(_ command: @escaping @Sendable (SpotifyAppleScriptPlaybackService) -> Void) {
         let service = playbackService
         Task { [weak self] in
             await Task.detached {
