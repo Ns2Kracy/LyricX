@@ -55,13 +55,13 @@ function Home() {
               href="https://github.com/Ns2Kracy/LyricX/releases"
               target="_blank"
               rel="noreferrer"
-              class="inline-flex h-12 items-center justify-center rounded-full bg-[#111111] px-6 text-sm font-semibold text-white no-underline transition hover:bg-[#262626] active:translate-y-px sm:w-auto"
+              class="lx-button-dark inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-semibold no-underline transition active:translate-y-px sm:w-auto"
             >
               Download latest
             </a>
             <a
               href="#download"
-              class="inline-flex h-12 items-center justify-center rounded-full border border-black/15 bg-white/70 px-6 text-sm font-semibold text-[#111111] no-underline transition hover:bg-white active:translate-y-px sm:w-auto"
+              class="lx-button-outline-dark inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-semibold no-underline transition active:translate-y-px sm:w-auto"
             >
               Build from source
             </a>
@@ -140,7 +140,7 @@ function Home() {
                 href="https://github.com/Ns2Kracy/LyricX/releases"
                 target="_blank"
                 rel="noreferrer"
-                class="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-[#111111] no-underline transition hover:bg-[#e5e5e5] active:translate-y-px"
+                class="lx-button-light inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-semibold no-underline transition active:translate-y-px"
               >
                 Open releases
               </a>
@@ -148,7 +148,7 @@ function Home() {
                 href="https://github.com/Ns2Kracy/LyricX"
                 target="_blank"
                 rel="noreferrer"
-                class="inline-flex h-12 items-center justify-center rounded-full border border-white/20 px-6 text-sm font-semibold text-white no-underline transition hover:bg-white/10 active:translate-y-px"
+                class="lx-button-outline-light inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-semibold no-underline transition active:translate-y-px"
               >
                 View source
               </a>

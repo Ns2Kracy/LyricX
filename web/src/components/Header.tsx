@@ -25,7 +25,7 @@ export default function Header() {
             href="https://github.com/Ns2Kracy/LyricX/releases"
             target="_blank"
             rel="noreferrer"
-            class="shrink-0 rounded-full bg-[#111111] px-4 py-2 text-white no-underline transition hover:bg-[#262626] active:translate-y-px"
+            class="lx-button-dark shrink-0 rounded-full px-4 py-2 no-underline transition active:translate-y-px"
           >
             Download
           </a>

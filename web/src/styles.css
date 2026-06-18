@@ -36,6 +36,54 @@ a {
   color: inherit;
 }
 
+.lx-button-dark,
+.lx-button-dark:visited {
+  background: #111111 !important;
+  border-color: #111111 !important;
+  color: #ffffff !important;
+}
+
+.lx-button-dark:hover {
+  background: #262626 !important;
+  color: #ffffff !important;
+}
+
+.lx-button-light,
+.lx-button-light:visited {
+  background: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #111111 !important;
+}
+
+.lx-button-light:hover {
+  background: #e5e5e5 !important;
+  color: #111111 !important;
+}
+
+.lx-button-outline-dark,
+.lx-button-outline-dark:visited {
+  background: rgb(255 255 255 / 0.7) !important;
+  border-color: rgb(0 0 0 / 0.16) !important;
+  color: #111111 !important;
+}
+
+.lx-button-outline-dark:hover {
+  background: #ffffff !important;
+  color: #111111 !important;
+}
+
+.lx-button-outline-light,
+.lx-button-outline-light:visited {
+  background: transparent !important;
+  border-color: rgb(255 255 255 / 0.22) !important;
+  color: #ffffff !important;
+}
+
+.lx-button-outline-light:hover {
+  background: rgb(255 255 255 / 0.1) !important;
+  color: #ffffff !important;
+}
+
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }

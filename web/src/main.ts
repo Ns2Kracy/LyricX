@@ -13,7 +13,7 @@ if (app) {
         <div class="ml-auto flex min-w-0 items-center gap-2 overflow-x-auto text-sm font-medium text-[#525252] sm:gap-5">
           <a href="#features" class="shrink-0 rounded-full px-2 py-1 no-underline hover:text-[#111111]">Features</a>
           <a href="#workflow" class="shrink-0 rounded-full px-2 py-1 no-underline hover:text-[#111111]">Workflow</a>
-          <a href="#download" class="shrink-0 rounded-full bg-[#111111] px-4 py-2 text-white no-underline transition hover:bg-[#262626] active:translate-y-px">Download</a>
+          <a href="#download" class="lx-button-dark shrink-0 rounded-full px-4 py-2 no-underline transition active:translate-y-px">Download</a>
         </div>
       </nav>
     </header>
@@ -31,10 +31,10 @@ if (app) {
             LyricX follows the current Spotify track, finds synced LRCLIB lyrics, and keeps the active line in your macOS menu bar.
           </p>
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a href="https://github.com/Ns2Kracy/LyricX/releases" class="inline-flex h-12 items-center justify-center rounded-full bg-[#111111] px-6 text-sm font-semibold text-white no-underline transition hover:bg-[#262626] active:translate-y-px" target="_blank" rel="noreferrer">
+            <a href="https://github.com/Ns2Kracy/LyricX/releases" class="lx-button-dark inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-semibold no-underline transition active:translate-y-px" target="_blank" rel="noreferrer">
               Download latest
             </a>
-            <a href="#download" class="inline-flex h-12 items-center justify-center rounded-full border border-black/15 bg-white/70 px-6 text-sm font-semibold text-[#111111] no-underline transition hover:bg-white active:translate-y-px">
+            <a href="#download" class="lx-button-outline-dark inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-semibold no-underline transition active:translate-y-px">
               Build from source
             </a>
           </div>
@@ -123,8 +123,8 @@ if (app) {
             <h2 class="text-3xl font-semibold leading-tight sm:text-5xl">Download a release or build it locally.</h2>
             <p class="mt-5 max-w-2xl text-base leading-7 text-[#d4d4d4]">LyricX is unsigned today. macOS may ask you to approve Automation access for Spotify the first time it reads playback state.</p>
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="https://github.com/Ns2Kracy/LyricX/releases" class="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-[#111111] no-underline transition hover:bg-[#e5e5e5] active:translate-y-px" target="_blank" rel="noreferrer">Open releases</a>
-              <a href="https://github.com/Ns2Kracy/LyricX" class="inline-flex h-12 items-center justify-center rounded-full border border-white/20 px-6 text-sm font-semibold text-white no-underline transition hover:bg-white/10 active:translate-y-px" target="_blank" rel="noreferrer">View source</a>
+              <a href="https://github.com/Ns2Kracy/LyricX/releases" class="lx-button-light inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-semibold no-underline transition active:translate-y-px" target="_blank" rel="noreferrer">Open releases</a>
+              <a href="https://github.com/Ns2Kracy/LyricX" class="lx-button-outline-light inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-semibold no-underline transition active:translate-y-px" target="_blank" rel="noreferrer">View source</a>
             </div>
           </div>
           <pre class="overflow-x-auto rounded-lg border border-white/15 bg-black/40 p-5 text-sm leading-7 text-[#e5e5e5] shadow-2xl"><code>swift build
