@@ -9,6 +9,8 @@ struct LyricXUnitTests {
         try testParsesMultipleTimestampsOnOneLine()
         try testIgnoresMetadataAndBlankLines()
         try testSortsParsedLinesByTime()
+        try testParsesEnhancedInlineSegmentTimestamps()
+        try testNormalTimestampedLineHasNoSegments()
         try testTimelineReturnsNilBeforeFirstLine()
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
         try testTimelineReturnsNextLineAfterPosition()
@@ -94,6 +96,28 @@ struct LyricXUnitTests {
             LyricLine(time: 20.0, text: "Second"),
             LyricLine(time: 30.0, text: "Third")
         ])
+    }
+
+    private static func testParsesEnhancedInlineSegmentTimestamps() throws {
+        let lines = LRCParser.parse("[00:10.00]<00:10.00>Hello <00:10.50>world")
+
+        try expectEqual(lines, [
+            LyricLine(
+                time: 10.0,
+                text: "Hello world",
+                segments: [
+                    LyricSegment(time: 10.0, text: "Hello "),
+                    LyricSegment(time: 10.5, text: "world")
+                ]
+            )
+        ])
+    }
+
+    private static func testNormalTimestampedLineHasNoSegments() throws {
+        let lines = LRCParser.parse("[00:12.34]First line")
+
+        try expectEqual(lines, [LyricLine(time: 12.34, text: "First line")])
+        try expectEqual(lines[0].segments, [])
     }
 
     private static func testTimelineReturnsNilBeforeFirstLine() throws {

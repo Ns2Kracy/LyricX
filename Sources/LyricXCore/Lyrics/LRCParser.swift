@@ -34,12 +34,43 @@ public enum LRCParser {
             remainder = remainder[remainder.index(after: endIndex)...]
         }
 
-        let text = remainder.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parsedText = parseSegments(remainder)
+        let text = parsedText.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !timestamps.isEmpty, !text.isEmpty else {
             return []
         }
 
-        return timestamps.map { LyricLine(time: $0, text: text) }
+        return timestamps.map { LyricLine(time: $0, text: text, segments: parsedText.segments) }
+    }
+
+    private static func parseSegments(_ rawText: Substring) -> (text: String, segments: [LyricSegment]) {
+        var displayText = ""
+        var segments: [LyricSegment] = []
+        var remainder = rawText
+
+        while let markerStart = remainder.firstIndex(of: "<"),
+              let markerEnd = remainder[markerStart...].firstIndex(of: ">") {
+            displayText += remainder[..<markerStart]
+
+            let tagStart = remainder.index(after: markerStart)
+            let tag = String(remainder[tagStart..<markerEnd])
+            guard let timestamp = parseTimestamp(tag) else {
+                displayText += remainder[markerStart...]
+                return (displayText, segments)
+            }
+
+            let segmentTextStart = remainder.index(after: markerEnd)
+            let nextMarker = remainder[segmentTextStart...].firstIndex(of: "<") ?? remainder.endIndex
+            let segmentText = String(remainder[segmentTextStart..<nextMarker])
+            displayText += segmentText
+            if !segmentText.isEmpty {
+                segments.append(LyricSegment(time: timestamp, text: segmentText))
+            }
+            remainder = remainder[nextMarker...]
+        }
+
+        displayText += remainder
+        return (displayText, segments)
     }
 
     private static func parseTimestamp(_ tag: String) -> TimeInterval? {
