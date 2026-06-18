@@ -38,6 +38,8 @@ struct LyricXUnitTests {
         try testMenuBarLayoutUsesPresetWidthForLongTextWithoutAccessory()
         try testMenuBarLayoutCompactsShortTextWithAccessory()
         try testMenuBarLayoutUsesPresetWidthForLongTextWithAccessory()
+        try testMenuBarClickFeedbackStaysVisibleWhilePressed()
+        try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
         try testStylePresetCodableRoundTrip()
         try testStylePresetStoreSavesAndLoadsSelection()
         try testAppSettingsDefaultFrameRateIsThirtyFPS()
@@ -329,6 +331,34 @@ struct LyricXUnitTests {
         try expectEqual(layout.statusItemWidth, 254)
         try expectEqual(layout.textViewportMinX, 26)
         try expectEqual(layout.textViewportWidth, 220)
+    }
+
+    private static func testMenuBarClickFeedbackStaysVisibleWhilePressed() throws {
+        var feedback = MenuBarClickFeedbackState()
+        let pressGeneration = feedback.press()
+
+        feedback.expire(generation: pressGeneration)
+
+        try expectEqual(feedback.isVisible, true)
+        try expectEqual(feedback.isPressed, true)
+
+        let releaseGeneration = feedback.release()
+        feedback.expire(generation: releaseGeneration)
+
+        try expectEqual(feedback.isVisible, false)
+        try expectEqual(feedback.isPressed, false)
+    }
+
+    private static func testMenuBarClickFeedbackIgnoresStaleReleaseTimeout() throws {
+        var feedback = MenuBarClickFeedbackState()
+        _ = feedback.press()
+        let firstReleaseGeneration = feedback.release()
+        _ = feedback.press()
+
+        feedback.expire(generation: firstReleaseGeneration)
+
+        try expectEqual(feedback.isVisible, true)
+        try expectEqual(feedback.isPressed, true)
     }
 
     private static func testStylePresetCodableRoundTrip() throws {

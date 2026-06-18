@@ -13,8 +13,8 @@ final class MenuBarStatusItemView: NSControl {
         behavior: .staticText
     )
     private var date = Date()
-    private var clickFeedbackVisible = false
-    private var clickFeedbackGeneration = 0
+    private var clickFeedback = MenuBarClickFeedbackState()
+    private var clickReleaseMonitors: [Any] = []
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -38,26 +38,57 @@ final class MenuBarStatusItemView: NSControl {
         needsDisplay = true
     }
 
-    func showClickFeedback() {
-        clickFeedbackGeneration += 1
-        let generation = clickFeedbackGeneration
-        clickFeedbackVisible = true
+    func beginClickFeedback() {
+        _ = clickFeedback.press()
+        startClickReleaseMonitoring()
+        needsDisplay = true
+    }
+
+    func endClickFeedback() {
+        stopClickReleaseMonitoring()
+        let generation = clickFeedback.release()
         needsDisplay = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
-            guard let self, self.clickFeedbackGeneration == generation else {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+            guard let self else {
                 return
             }
 
-            self.clickFeedbackVisible = false
+            self.clickFeedback.expire(generation: generation)
             self.needsDisplay = true
         }
+    }
+
+    private func startClickReleaseMonitoring() {
+        stopClickReleaseMonitoring()
+
+        let localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
+            Task { @MainActor [weak self] in
+                self?.endClickFeedback()
+            }
+            return event
+        }
+
+        let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.endClickFeedback()
+            }
+        }
+
+        clickReleaseMonitors = [localMonitor, globalMonitor].compactMap { $0 }
+    }
+
+    private func stopClickReleaseMonitoring() {
+        for monitor in clickReleaseMonitors {
+            NSEvent.removeMonitor(monitor)
+        }
+        clickReleaseMonitors.removeAll()
     }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-        if clickFeedbackVisible {
+        if clickFeedback.isVisible {
             NSColor.labelColor.withAlphaComponent(0.12).setFill()
             NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 4, yRadius: 4).fill()
         }
@@ -73,8 +104,12 @@ final class MenuBarStatusItemView: NSControl {
     }
 
     override func mouseDown(with event: NSEvent) {
-        showClickFeedback()
+        beginClickFeedback()
         sendAction(action, to: target)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        endClickFeedback()
     }
 
     private func width(for presentation: MenuBarPresentation) -> CGFloat {
