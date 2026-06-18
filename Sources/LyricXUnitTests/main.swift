@@ -49,6 +49,9 @@ struct LyricXUnitTests {
         try testStylePresetStoreSavesAndLoadsSelection()
         try testAppSettingsDefaultFrameRateIsThirtyFPS()
         try testAppSettingsStoreSavesAndLoadsFrameRate()
+        try testAppSettingsDefaultsIncludeFloatingLyrics()
+        try testAppSettingsDecodesLegacyJSONWithFloatingDefaults()
+        try testAppSettingsStoreSavesAndLoadsFloatingLyrics()
         try testAppVersionComparisonFindsNewerPatch()
         try testAppVersionIgnoresLeadingV()
         try testGitHubReleaseDecoderFindsPackageAsset()
@@ -450,6 +453,60 @@ struct LyricXUnitTests {
         let store = AppSettingsStore(fileURL: url)
         var settings = AppSettings.default
         settings.menuBarFrameRate = .fps120
+
+        try store.save(settings)
+        let loaded = try store.load()
+
+        try? FileManager.default.removeItem(at: url)
+        try expectEqual(loaded, settings)
+    }
+
+    private static func testAppSettingsDefaultsIncludeFloatingLyrics() throws {
+        let settings = AppSettings.default
+
+        try expectEqual(settings.showsFloatingLyrics, false)
+        try expectEqual(settings.floatingLyricsLocked, false)
+        try expectEqual(settings.floatingLyricsClickThrough, false)
+        try expectEqual(settings.floatingLyricsKTVEnabled, true)
+        try expectEqual(settings.floatingLyricsBackgroundOpacity, 0.68)
+        try expectEqual(settings.floatingLyricsLyricOffsetMs, 0)
+        try expectEqual(settings.floatingLyricsLineOffsetMs, 0)
+        try expectEqual(settings.floatingLyricsSegmentOffsetMs, 0)
+        try expectNil(settings.floatingLyricsWindowFrame)
+    }
+
+    private static func testAppSettingsDecodesLegacyJSONWithFloatingDefaults() throws {
+        let data = Data("""
+        {
+          "showsLyrics" : true,
+          "showsTrackWhenLyricsMissing" : true,
+          "menuBarFrameRate" : 60
+        }
+        """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        try expectEqual(settings.menuBarFrameRate, .fps60)
+        try expectEqual(settings.showsFloatingLyrics, false)
+        try expectEqual(settings.floatingLyricsKTVEnabled, true)
+        try expectEqual(settings.floatingLyricsBackgroundOpacity, 0.68)
+        try expectEqual(settings.floatingLyricsLyricOffsetMs, 0)
+        try expectNil(settings.floatingLyricsWindowFrame)
+    }
+
+    private static func testAppSettingsStoreSavesAndLoadsFloatingLyrics() throws {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        let store = AppSettingsStore(fileURL: url)
+        var settings = AppSettings.default
+        settings.showsFloatingLyrics = true
+        settings.floatingLyricsLocked = true
+        settings.floatingLyricsClickThrough = true
+        settings.floatingLyricsKTVEnabled = false
+        settings.floatingLyricsBackgroundOpacity = 0.42
+        settings.floatingLyricsLyricOffsetMs = 120
+        settings.floatingLyricsLineOffsetMs = -80
+        settings.floatingLyricsSegmentOffsetMs = 35
+        settings.floatingLyricsWindowFrame = FloatingLyricsWindowFrame(x: 100, y: 200, width: 720, height: 120)
 
         try store.save(settings)
         let loaded = try store.load()
