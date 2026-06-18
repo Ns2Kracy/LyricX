@@ -122,6 +122,14 @@ final class AppModel {
         )
     }
 
+    func lyricContext(at date: Date = Date()) -> LyricTimelineContext {
+        guard let timeline else {
+            return .empty
+        }
+
+        return timeline.context(at: estimatedPlaybackPosition(at: date))
+    }
+
     init(
         playbackService: SpotifyAppleScriptPlaybackService = SpotifyAppleScriptPlaybackService(),
         lyricsRepository: LyricsRepository = LyricsRepository(),

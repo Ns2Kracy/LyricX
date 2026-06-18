@@ -121,15 +121,24 @@ struct MainWindowView: View {
     }
 
     private var lyrics: some View {
+        TimelineView(.periodic(from: .now, by: lyricRefreshInterval)) { timeline in
+            lyricRows(at: timeline.date)
+        }
+        .padding(24)
+    }
+
+    @ViewBuilder
+    private func lyricRows(at date: Date) -> some View {
+        let context = model.lyricContext(at: date)
+
         VStack(alignment: .leading, spacing: 12) {
             Text("Lyrics")
                 .font(.headline)
 
-            LyricContextRow(label: "Previous", text: previousLyricText, prominence: .secondary)
-            LyricContextRow(label: "Current", text: currentLyricText, prominence: .primary)
-            LyricContextRow(label: "Next", text: model.nextLine?.text ?? "No next line", prominence: .secondary)
+            LyricContextRow(label: "Previous", text: previousLyricText(in: context), prominence: .secondary)
+            LyricContextRow(label: "Current", text: currentLyricText(in: context), prominence: .primary)
+            LyricContextRow(label: "Next", text: nextLyricText(in: context), prominence: .secondary)
         }
-        .padding(24)
     }
 
     private var footer: some View {
@@ -192,15 +201,20 @@ struct MainWindowView: View {
         model.playback.isPlaying ? "pause.fill" : "play.fill"
     }
 
-    private var previousLyricText: String {
-        guard let currentLine = model.currentLine else {
-            return "No previous line"
-        }
-        return model.timeline?.lines.last { $0.time < currentLine.time }?.text ?? "No previous line"
+    private var lyricRefreshInterval: TimeInterval {
+        min(max(model.menuBarFrameRate.frameInterval, 0.01), 0.1)
     }
 
-    private var currentLyricText: String {
-        model.currentLine?.text ?? model.lyricsStatus
+    private func previousLyricText(in context: LyricTimelineContext) -> String {
+        context.previousLine?.text ?? "No previous line"
+    }
+
+    private func currentLyricText(in context: LyricTimelineContext) -> String {
+        context.currentLine?.text ?? model.lyricsStatus
+    }
+
+    private func nextLyricText(in context: LyricTimelineContext) -> String {
+        context.nextLine?.text ?? "No next line"
     }
 
     private func formatTime(_ time: TimeInterval) -> String {

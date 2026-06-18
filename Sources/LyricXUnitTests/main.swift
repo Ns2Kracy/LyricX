@@ -12,6 +12,7 @@ struct LyricXUnitTests {
         try testTimelineReturnsNilBeforeFirstLine()
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
         try testTimelineReturnsNextLineAfterPosition()
+        try testTimelineContextReturnsPreviousCurrentAndNextLine()
         try testMenuBarMarqueeKeepsShortTextWhole()
         try testMenuBarMarqueeReturnsFixedWindowForLongText()
         try testMenuBarMarqueeReturnsTimedWindowForLongLyric()
@@ -113,6 +114,20 @@ struct LyricXUnitTests {
 
         try expectEqual(timeline.nextLine(after: 10.0), LyricLine(time: 20.0, text: "Second"))
         try expectNil(timeline.nextLine(after: 20.0))
+    }
+
+    private static func testTimelineContextReturnsPreviousCurrentAndNextLine() throws {
+        let timeline = LyricTimeline(lines: [
+            LyricLine(time: 10.0, text: "First"),
+            LyricLine(time: 20.0, text: "Second"),
+            LyricLine(time: 30.0, text: "Third")
+        ])
+
+        let context = timeline.context(at: 22.0)
+
+        try expectEqual(context.previousLine, LyricLine(time: 10.0, text: "First"))
+        try expectEqual(context.currentLine, LyricLine(time: 20.0, text: "Second"))
+        try expectEqual(context.nextLine, LyricLine(time: 30.0, text: "Third"))
     }
 
     private static func testMenuBarMarqueeKeepsShortTextWhole() throws {
