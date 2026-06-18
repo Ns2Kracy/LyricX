@@ -7,8 +7,10 @@ It is built with SwiftUI and Swift Package Manager. The repository does not requ
 ## Features
 
 - Shows the current synced lyric line in the macOS menu bar.
+- Shows an optional always-on-top Dynamic Island-style floating lyric panel with lock, click-through, opacity, and timing controls.
 - Provides a main LyricX window with track status, lyric preview, artwork, playback controls, and settings.
 - Includes settings for lyric style presets, menu-bar width, font size, color, alignment, and missing-lyrics fallback behavior.
+- Supports true KTV-style highlighting when the lyric source provides timed word or segment data, with line-level fallback otherwise.
 - Falls back to the current Spotify track name when synced lyrics are missing.
 - Hides the menu-bar icon when lyric or track text is available, and shows the icon only as the empty-state fallback.
 - Reads local Spotify playback state through AppleScript.
@@ -49,7 +51,7 @@ Launch the app:
 open dist/LyricX.app
 ```
 
-LyricX opens a main window and also keeps the lyric line in the menu bar. Open the menu-bar item to show the main window, control Spotify playback, refresh lyrics, toggle lyric text, show the track name when lyrics are missing, or quit. Settings live in the main window's Settings tab.
+LyricX opens a main window and also keeps the lyric line in the menu bar. Open the menu-bar item to show the main window, control Spotify playback, refresh lyrics, toggle lyric text, show the track name when lyrics are missing, toggle floating lyrics, or quit. Settings live in the main window's Settings tab.
 
 ## Main Window
 
@@ -66,7 +68,7 @@ Open the main LyricX window and choose the Settings tab. Settings currently incl
 - Spotify as the active phase-one music app.
 - Disabled entries for future music-app support.
 - Manual GitHub Release update checking and an Open Release link when an update is available.
-- A disabled floating lyrics entry marked as future work.
+- Floating lyric controls for visibility, lock, click-through, KTV mode, background opacity, and millisecond timing offsets.
 
 Preset edits are saved as JSON under Application Support.
 
@@ -135,6 +137,8 @@ Spotify is the only enabled music app in this phase. Apple Music, NetEase Cloud 
 Spotify playback state comes from the local Spotify app. Synced lyrics come from LRCLIB and are cached under Application Support. LyricX tries LRCLIB exact lookup first, then LRCLIB search.
 
 If LRCLIB does not have synced lyrics for the current track, LyricX keeps polling Spotify and shows the track name or a visible `No synced lyrics for <track>` state.
+
+Floating lyric KTV mode uses only source-provided timed word or segment timestamps. When the active lyric has only ordinary line-level LRC timestamps, LyricX shows the current line and next-line context without fabricating per-word timing.
 
 ## Project Layout
 
