@@ -140,7 +140,8 @@ If LRCLIB does not have synced lyrics for the current track, LyricX keeps pollin
 
 ```text
 Sources/LyricX/          SwiftUI menu-bar app target
-Sources/LyricXCore/      Playback, lyric lookup, parsing, caching, style, artwork, and update logic
+Sources/LyricXCore/      Playback contracts, lyric lookup, parsing, caching, style, artwork, and update logic
+Sources/LyricXMac/       macOS Spotify AppleScript playback adapter
 Sources/LyricXUnitTests/ Executable test target for Command Line Tools environments
 scripts/build-app.sh     Release app bundle builder
 scripts/package-release.sh Release zip and checksum packager

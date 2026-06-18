@@ -9,19 +9,24 @@ let package = Package(
     ],
     products: [
         .library(name: "LyricXCore", targets: ["LyricXCore"]),
+        .library(name: "LyricXMac", targets: ["LyricXMac"]),
         .executable(name: "LyricX", targets: ["LyricX"]),
         .executable(name: "LyricXUnitTests", targets: ["LyricXUnitTests"])
     ],
     targets: [
         .target(name: "LyricXCore"),
+        .target(
+            name: "LyricXMac",
+            dependencies: ["LyricXCore"]
+        ),
         .executableTarget(
             name: "LyricX",
-            dependencies: ["LyricXCore"],
+            dependencies: ["LyricXCore", "LyricXMac"],
             exclude: ["Resources/Info.plist"]
         ),
         .executableTarget(
             name: "LyricXUnitTests",
-            dependencies: ["LyricXCore"]
+            dependencies: ["LyricXCore", "LyricXMac"]
         )
     ]
 )

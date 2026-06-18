@@ -1,5 +1,6 @@
 import Foundation
 import LyricXCore
+import LyricXMac
 import Observation
 
 @MainActor
@@ -17,7 +18,7 @@ final class AppModel {
     var latestUpdate: AppUpdate?
     var updateStatus = "Updates not checked"
 
-    @ObservationIgnored private let playbackService: SpotifyPlaybackService
+    @ObservationIgnored private let playbackService: any PlaybackArtworkService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
     @ObservationIgnored private let settingsStore: AppSettingsStore
     @ObservationIgnored private let presetStore: LyricStylePresetStore
@@ -122,7 +123,7 @@ final class AppModel {
     }
 
     init(
-        playbackService: SpotifyPlaybackService = SpotifyPlaybackService(),
+        playbackService: any PlaybackArtworkService = SpotifyAppleScriptPlaybackService(),
         lyricsRepository: LyricsRepository = LyricsRepository(),
         settingsStore: AppSettingsStore = AppSettingsStore(fileURL: AppModel.defaultSettingsStoreURL()),
         presetStore: LyricStylePresetStore = LyricStylePresetStore(fileURL: AppModel.defaultPresetStoreURL()),
@@ -341,7 +342,7 @@ final class AppModel {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    private func runPlayerCommand(_ command: @escaping @Sendable (SpotifyPlaybackService) -> Void) {
+    private func runPlayerCommand(_ command: @escaping @Sendable (any PlaybackArtworkService) -> Void) {
         let service = playbackService
         Task { [weak self] in
             await Task.detached {

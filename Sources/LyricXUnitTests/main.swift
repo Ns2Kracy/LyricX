@@ -1,5 +1,6 @@
 import Foundation
 import LyricXCore
+import LyricXMac
 
 @main
 struct LyricXUnitTests {
@@ -198,28 +199,28 @@ struct LyricXUnitTests {
     }
 
     private static func testSpotifyControlScriptForPlayPause() throws {
-        try expectEqual(SpotifyPlayerCommand.playPause.appleScript, "tell application \"Spotify\" to playpause")
+        try expectEqual(SpotifyAppleScriptPlayerCommand.playPause.appleScript, "tell application \"Spotify\" to playpause")
     }
 
     private static func testSpotifyControlScriptForNextTrack() throws {
-        try expectEqual(SpotifyPlayerCommand.nextTrack.appleScript, "tell application \"Spotify\" to next track")
+        try expectEqual(SpotifyAppleScriptPlayerCommand.nextTrack.appleScript, "tell application \"Spotify\" to next track")
     }
 
     private static func testSpotifyControlScriptForPreviousTrack() throws {
-        try expectEqual(SpotifyPlayerCommand.previousTrack.appleScript, "tell application \"Spotify\" to previous track")
+        try expectEqual(SpotifyAppleScriptPlayerCommand.previousTrack.appleScript, "tell application \"Spotify\" to previous track")
     }
 
     private static func testSpotifyServiceRunsControlCommand() throws {
         let recorder = ScriptRecorder()
-        let service = SpotifyPlaybackService(runScript: recorder.run)
+        let service = SpotifyAppleScriptPlaybackService(runScript: recorder.run)
 
         service.nextTrack()
 
-        try expectEqual(recorder.scripts, [SpotifyPlayerCommand.nextTrack.appleScript])
+        try expectEqual(recorder.scripts, [SpotifyAppleScriptPlayerCommand.nextTrack.appleScript])
     }
 
     private static func testSpotifyParseReadsArtworkURL() throws {
-        let service = SpotifyPlaybackService(runScript: { _ in
+        let service = SpotifyAppleScriptPlaybackService(runScript: { _ in
             """
         playing
         Aimai
@@ -237,7 +238,7 @@ struct LyricXUnitTests {
 
     private static func testSpotifyArtworkProviderLoadsArtworkData() async throws {
         let expectedURL = try require(URL(string: "https://i.scdn.co/image/example"), "URL should be valid")
-        let service = SpotifyPlaybackService(
+        let service = SpotifyAppleScriptPlaybackService(
             runScript: { _ in "" },
             fetchArtwork: { url in
                 try expectEqual(url, expectedURL)

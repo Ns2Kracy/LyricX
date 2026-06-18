@@ -1,6 +1,7 @@
 import Foundation
+import LyricXCore
 
-public struct SpotifyPlaybackService: Sendable {
+public struct SpotifyAppleScriptPlaybackService: Sendable {
     private let runScript: @Sendable (String) throws -> String
     private let fetchArtwork: @Sendable (URL) async throws -> (Data, String?)
 
@@ -90,7 +91,7 @@ public struct SpotifyPlaybackService: Sendable {
 
         let errorOutput = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)?
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        throw SpotifyPlaybackError.scriptFailed(errorOutput?.nilIfBlank ?? "osascript exited with status \(process.terminationStatus)")
+        throw SpotifyAppleScriptPlaybackError.scriptFailed(errorOutput?.nilIfBlank ?? "osascript exited with status \(process.terminationStatus)")
     }
 
     private static func defaultFetchArtwork(from url: URL) async throws -> (Data, String?) {
@@ -125,7 +126,7 @@ public struct SpotifyPlaybackService: Sendable {
     """
 }
 
-extension SpotifyPlaybackService: PlayerService {
+extension SpotifyAppleScriptPlaybackService: PlaybackArtworkService {
     public func playPause() {
         runCommand(.playPause)
     }
@@ -138,12 +139,6 @@ extension SpotifyPlaybackService: PlayerService {
         runCommand(.previousTrack)
     }
 
-    private func runCommand(_ command: SpotifyPlayerCommand) {
-        _ = try? runScript(command.appleScript)
-    }
-}
-
-extension SpotifyPlaybackService: ArtworkProvider {
     public func artwork(for track: PlaybackTrack) async -> TrackArtwork? {
         guard let artworkURL = track.artworkURL else {
             return nil
@@ -156,9 +151,30 @@ extension SpotifyPlaybackService: ArtworkProvider {
             return nil
         }
     }
+
+    private func runCommand(_ command: SpotifyAppleScriptPlayerCommand) {
+        _ = try? runScript(command.appleScript)
+    }
 }
 
-enum SpotifyPlaybackError: LocalizedError {
+public enum SpotifyAppleScriptPlayerCommand: Equatable, Sendable {
+    case playPause
+    case nextTrack
+    case previousTrack
+
+    public var appleScript: String {
+        switch self {
+        case .playPause:
+            return "tell application \"Spotify\" to playpause"
+        case .nextTrack:
+            return "tell application \"Spotify\" to next track"
+        case .previousTrack:
+            return "tell application \"Spotify\" to previous track"
+        }
+    }
+}
+
+enum SpotifyAppleScriptPlaybackError: LocalizedError {
     case scriptFailed(String)
 
     var errorDescription: String? {
@@ -166,5 +182,12 @@ enum SpotifyPlaybackError: LocalizedError {
         case .scriptFailed(let message):
             message
         }
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
