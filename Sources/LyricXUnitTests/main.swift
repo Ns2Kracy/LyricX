@@ -15,6 +15,9 @@ struct LyricXUnitTests {
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
         try testTimelineReturnsNextLineAfterPosition()
         try testTimelineContextReturnsPreviousCurrentAndNextLine()
+        try testFloatingPresentationUsesOffsetsForLineSelection()
+        try testFloatingPresentationBuildsKTVSegmentsWhenTimedSegmentsExist()
+        try testFloatingPresentationFallsBackWithoutTimedSegments()
         try testTrackScopedLyricLoadRejectsStaleTrack()
         try testTrackScopedLyricLoadRejectsSupersededRequest()
         try testTrackScopedLyricLoadAcceptsCurrentTrack()
@@ -158,6 +161,76 @@ struct LyricXUnitTests {
         try expectEqual(context.previousLine, LyricLine(time: 10.0, text: "First"))
         try expectEqual(context.currentLine, LyricLine(time: 20.0, text: "Second"))
         try expectEqual(context.nextLine, LyricLine(time: 30.0, text: "Third"))
+    }
+
+    private static func testFloatingPresentationUsesOffsetsForLineSelection() throws {
+        let timeline = LyricTimeline(lines: [
+            LyricLine(time: 10.0, text: "First"),
+            LyricLine(time: 12.0, text: "Second")
+        ])
+        var settings = AppSettings.default
+        settings.floatingLyricsLyricOffsetMs = 500
+        settings.floatingLyricsLineOffsetMs = 600
+
+        let presentation = FloatingLyricsPresentation.make(
+            timeline: timeline,
+            playbackPosition: 10.95,
+            statusText: "Lyrics synced",
+            trackText: nil,
+            showsTrackWhenLyricsMissing: true,
+            settings: settings
+        )
+
+        try expectEqual(presentation.currentText, "Second")
+        try expectNil(presentation.nextText)
+    }
+
+    private static func testFloatingPresentationBuildsKTVSegmentsWhenTimedSegmentsExist() throws {
+        let timeline = LyricTimeline(lines: [
+            LyricLine(
+                time: 10,
+                text: "Hello world",
+                segments: [
+                    LyricSegment(time: 10.0, text: "Hello "),
+                    LyricSegment(time: 10.5, text: "world")
+                ]
+            )
+        ])
+        var settings = AppSettings.default
+        settings.floatingLyricsKTVEnabled = true
+        settings.floatingLyricsSegmentOffsetMs = 100
+
+        let presentation = FloatingLyricsPresentation.make(
+            timeline: timeline,
+            playbackPosition: 10.45,
+            statusText: "Lyrics synced",
+            trackText: nil,
+            showsTrackWhenLyricsMissing: true,
+            settings: settings
+        )
+
+        try expectEqual(presentation.usesKTV, true)
+        try expectEqual(presentation.segments.map(\.text), ["Hello ", "world"])
+        try expectEqual(presentation.segments.map(\.isHighlighted), [true, true])
+    }
+
+    private static func testFloatingPresentationFallsBackWithoutTimedSegments() throws {
+        let timeline = LyricTimeline(lines: [LyricLine(time: 10, text: "Line only")])
+        var settings = AppSettings.default
+        settings.floatingLyricsKTVEnabled = true
+
+        let presentation = FloatingLyricsPresentation.make(
+            timeline: timeline,
+            playbackPosition: 10.2,
+            statusText: "Lyrics synced",
+            trackText: nil,
+            showsTrackWhenLyricsMissing: true,
+            settings: settings
+        )
+
+        try expectEqual(presentation.usesKTV, false)
+        try expectEqual(presentation.currentText, "Line only")
+        try expectEqual(presentation.segments, [])
     }
 
     private static func testTrackScopedLyricLoadRejectsStaleTrack() throws {
