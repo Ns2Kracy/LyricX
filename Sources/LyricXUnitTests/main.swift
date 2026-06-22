@@ -21,6 +21,7 @@ struct LyricXUnitTests {
         try testIslandLayoutConstrainsCollapsedSize()
         try testIslandLayoutConstrainsExpandedSize()
         try testIslandLayoutPlacesFrameAtTopCenter()
+        try testIslandLayoutDoesNotExceedNarrowVisibleFrame()
         try testTrackScopedLyricLoadRejectsStaleTrack()
         try testTrackScopedLyricLoadRejectsSupersededRequest()
         try testTrackScopedLyricLoadAcceptsCurrentTrack()
@@ -260,7 +261,7 @@ struct LyricXUnitTests {
     }
 
     private static func testIslandLayoutPlacesFrameAtTopCenter() throws {
-        let visibleFrame = OverlayScreenFrame(x: 0, y: 0, width: 1440, height: 900)
+        let visibleFrame = IslandLyricsLayout.ScreenFrame(x: 0, y: 0, width: 1440, height: 900)
         let frame = IslandLyricsLayout.frame(
             in: visibleFrame,
             state: .collapsed,
@@ -272,6 +273,19 @@ struct LyricXUnitTests {
         try expectEqual(frame.y, 854)
         try expectEqual(frame.width, 260)
         try expectEqual(frame.height, 38)
+    }
+
+    private static func testIslandLayoutDoesNotExceedNarrowVisibleFrame() throws {
+        let visibleFrame = IslandLyricsLayout.ScreenFrame(x: 10, y: 20, width: 160, height: 300)
+        let frame = IslandLyricsLayout.frame(
+            in: visibleFrame,
+            state: .expanded,
+            preferredContentWidth: 620,
+            topInset: 8
+        )
+
+        try expectEqual(frame.x, 10)
+        try expectEqual(frame.width, 160)
     }
 
     private static func testTrackScopedLyricLoadRejectsStaleTrack() throws {
