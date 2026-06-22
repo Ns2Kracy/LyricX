@@ -3,9 +3,21 @@ import SwiftUI
 
 struct FloatingLyricsView: View {
     let presentation: LyricOverlayPresentation
+    let onClose: () -> Void
 
     var body: some View {
         VStack(spacing: 6) {
+            HStack {
+                Spacer()
+                Button(action: onClose) {
+                    Image(systemName: "xmark.circle.fill")
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.white.opacity(0.62))
+                }
+                .buttonStyle(.plain)
+                .help("Hide Floating Lyrics")
+            }
+
             if presentation.usesKTV {
                 ktvLine
             } else {
@@ -26,10 +38,13 @@ struct FloatingLyricsView: View {
         }
         .padding(.horizontal, 30)
         .padding(.vertical, 14)
-        .frame(width: 720, height: 112)
-        .background(
-            Capsule(style: .continuous)
-                .fill(Color.black.opacity(presentation.backgroundOpacity))
+        .frame(minWidth: 360, idealWidth: 640, minHeight: 92, idealHeight: 132)
+        .background(.ultraThinMaterial)
+        .background(Color.black.opacity(presentation.backgroundOpacity * 0.55))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(presentation.currentText)

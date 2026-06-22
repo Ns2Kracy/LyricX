@@ -55,14 +55,14 @@ final class FloatingLyricsController: NSObject, NSWindowDelegate {
         let panel = panel ?? makePanel(date: date)
         self.panel = panel
 
-        hostingController?.rootView = FloatingLyricsView(presentation: model.floatingLyricsPresentation(at: date))
+        hostingController?.rootView = floatingLyricsView(date: date)
         applyPanelBehavior(panel)
         panel.orderFrontRegardless()
     }
 
     private func makePanel(date: Date) -> NSPanel {
         let hostingController = NSHostingController(
-            rootView: FloatingLyricsView(presentation: model.floatingLyricsPresentation(at: date))
+            rootView: floatingLyricsView(date: date)
         )
         let panel = NSPanel(
             contentRect: restoredOrDefaultFrame(),
@@ -85,6 +85,17 @@ final class FloatingLyricsController: NSObject, NSWindowDelegate {
 
         self.hostingController = hostingController
         return panel
+    }
+
+    private func floatingLyricsView(date: Date) -> FloatingLyricsView {
+        FloatingLyricsView(
+            presentation: model.floatingLyricsPresentation(at: date),
+            onClose: { [weak self] in
+                MainActor.assumeIsolated {
+                    self?.model.showsFloatingLyrics = false
+                }
+            }
+        )
     }
 
     private func applyPanelBehavior(_ panel: NSPanel) {
