@@ -7,7 +7,8 @@ It is built with SwiftUI and Swift Package Manager. The repository does not requ
 ## Features
 
 - Shows the current synced lyric line in the macOS menu bar.
-- Shows an optional always-on-top Dynamic Island-style floating lyric panel with lock, click-through, opacity, and timing controls.
+- Shows optional Floating Lyrics as a movable, resizable always-on-top desktop lyric panel.
+- Shows optional Island Lyrics as a top-center Dynamic Island-style compact lyric surface that can expand on interaction.
 - Provides a main LyricX window with track status, lyric preview, artwork, playback controls, and settings.
 - Includes settings for lyric style presets, menu-bar width, font size, color, alignment, and missing-lyrics fallback behavior.
 - Supports true KTV-style highlighting when the lyric source provides timed word or segment data, with line-level fallback otherwise.
@@ -68,7 +69,8 @@ Open the main LyricX window and choose the Settings tab. Settings currently incl
 - Spotify as the active phase-one music app.
 - Disabled entries for future music-app support.
 - Manual GitHub Release update checking and an Open Release link when an update is available.
-- Floating lyric controls for visibility, lock, click-through, KTV mode, background opacity, and millisecond timing offsets.
+- Floating Lyrics controls for visibility, lock, click-through, KTV mode, background opacity, and millisecond timing offsets.
+- Island Lyrics controls for visibility, hover expansion, click-through, KTV mode, and background opacity.
 
 Preset edits are saved as JSON under Application Support.
 
@@ -138,7 +140,12 @@ Spotify playback state comes from the local Spotify app. Synced lyrics come from
 
 If LRCLIB does not have synced lyrics for the current track, LyricX keeps polling Spotify and shows the track name or a visible `No synced lyrics for <track>` state.
 
-Floating lyric KTV mode uses only source-provided timed word or segment timestamps. When the active lyric has only ordinary line-level LRC timestamps, LyricX shows the current line and next-line context without fabricating per-word timing.
+LyricX has two desktop lyric shapes:
+
+- Floating Lyrics is a normal desktop overlay for lyric reading. It can be moved, resized, closed directly from the panel, locked, made click-through, and tuned with lyric timing offsets.
+- Island Lyrics is a separate top-center Dynamic Island-style surface. It stays compact by default, expands when clicked or hovered, and can be hidden from its expanded controls or from the menu/settings.
+
+KTV mode uses only source-provided timed word or segment timestamps. When the active lyric has only ordinary line-level LRC timestamps, LyricX shows the current line and next-line context without fabricating per-word timing.
 
 ## Project Layout
 
