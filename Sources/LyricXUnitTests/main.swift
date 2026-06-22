@@ -18,6 +18,9 @@ struct LyricXUnitTests {
         try testFloatingPresentationUsesOffsetsForLineSelection()
         try testFloatingPresentationBuildsKTVSegmentsWhenTimedSegmentsExist()
         try testFloatingPresentationFallsBackWithoutTimedSegments()
+        try testIslandLayoutConstrainsCollapsedSize()
+        try testIslandLayoutConstrainsExpandedSize()
+        try testIslandLayoutPlacesFrameAtTopCenter()
         try testTrackScopedLyricLoadRejectsStaleTrack()
         try testTrackScopedLyricLoadRejectsSupersededRequest()
         try testTrackScopedLyricLoadAcceptsCurrentTrack()
@@ -234,6 +237,41 @@ struct LyricXUnitTests {
         try expectEqual(presentation.usesKTV, false)
         try expectEqual(presentation.currentText, "Line only")
         try expectEqual(presentation.segments, [])
+    }
+
+    private static func testIslandLayoutConstrainsCollapsedSize() throws {
+        let size = IslandLyricsLayout.size(
+            for: .collapsed,
+            preferredContentWidth: 900
+        )
+
+        try expectEqual(size.width, 420)
+        try expectEqual(size.height, 38)
+    }
+
+    private static func testIslandLayoutConstrainsExpandedSize() throws {
+        let size = IslandLyricsLayout.size(
+            for: .expanded,
+            preferredContentWidth: 900
+        )
+
+        try expectEqual(size.width, 680)
+        try expectEqual(size.height, 128)
+    }
+
+    private static func testIslandLayoutPlacesFrameAtTopCenter() throws {
+        let visibleFrame = OverlayScreenFrame(x: 0, y: 0, width: 1440, height: 900)
+        let frame = IslandLyricsLayout.frame(
+            in: visibleFrame,
+            state: .collapsed,
+            preferredContentWidth: 260,
+            topInset: 8
+        )
+
+        try expectEqual(frame.x, 590)
+        try expectEqual(frame.y, 854)
+        try expectEqual(frame.width, 260)
+        try expectEqual(frame.height, 38)
     }
 
     private static func testTrackScopedLyricLoadRejectsStaleTrack() throws {
