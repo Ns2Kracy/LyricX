@@ -2,7 +2,7 @@ import LyricXCore
 import SwiftUI
 
 struct FloatingLyricsView: View {
-    let presentation: FloatingLyricsPresentation
+    let presentation: LyricOverlayPresentation
 
     var body: some View {
         VStack(spacing: 6) {

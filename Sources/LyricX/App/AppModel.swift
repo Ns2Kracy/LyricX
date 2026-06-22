@@ -194,15 +194,21 @@ final class AppModel {
         return timeline.context(at: estimatedPlaybackPosition(at: date))
     }
 
-    func floatingLyricsPresentation(at date: Date = Date()) -> FloatingLyricsPresentation {
-        FloatingLyricsPresentation.make(
+    func lyricOverlayPresentation(at date: Date = Date()) -> LyricOverlayPresentation {
+        LyricOverlayPresentation.make(
             timeline: timeline,
             playbackPosition: estimatedPlaybackPosition(at: date),
             statusText: lyricsStatus,
             trackText: playback.track.map { "\($0.title) - \($0.artist)" },
             showsTrackWhenLyricsMissing: showsTrackWhenLyricsMissing,
-            settings: settings
+            settings: settings,
+            ktvEnabled: settings.floatingLyricsKTVEnabled,
+            backgroundOpacity: settings.floatingLyricsBackgroundOpacity
         )
+    }
+
+    func floatingLyricsPresentation(at date: Date = Date()) -> LyricOverlayPresentation {
+        lyricOverlayPresentation(at: date)
     }
 
     func refreshLyricContext(at date: Date = Date()) {

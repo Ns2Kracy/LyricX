@@ -179,13 +179,15 @@ struct LyricXUnitTests {
         settings.floatingLyricsLyricOffsetMs = 500
         settings.floatingLyricsLineOffsetMs = 600
 
-        let presentation = FloatingLyricsPresentation.make(
+        let presentation = LyricOverlayPresentation.make(
             timeline: timeline,
             playbackPosition: 10.95,
             statusText: "Lyrics synced",
             trackText: nil,
             showsTrackWhenLyricsMissing: true,
-            settings: settings
+            settings: settings,
+            ktvEnabled: settings.floatingLyricsKTVEnabled,
+            backgroundOpacity: settings.floatingLyricsBackgroundOpacity
         )
 
         try expectEqual(presentation.currentText, "Second")
@@ -207,13 +209,15 @@ struct LyricXUnitTests {
         settings.floatingLyricsKTVEnabled = true
         settings.floatingLyricsSegmentOffsetMs = 100
 
-        let presentation = FloatingLyricsPresentation.make(
+        let presentation = LyricOverlayPresentation.make(
             timeline: timeline,
             playbackPosition: 10.45,
             statusText: "Lyrics synced",
             trackText: nil,
             showsTrackWhenLyricsMissing: true,
-            settings: settings
+            settings: settings,
+            ktvEnabled: settings.floatingLyricsKTVEnabled,
+            backgroundOpacity: settings.floatingLyricsBackgroundOpacity
         )
 
         try expectEqual(presentation.usesKTV, true)
@@ -226,13 +230,15 @@ struct LyricXUnitTests {
         var settings = AppSettings.default
         settings.floatingLyricsKTVEnabled = true
 
-        let presentation = FloatingLyricsPresentation.make(
+        let presentation = LyricOverlayPresentation.make(
             timeline: timeline,
             playbackPosition: 10.2,
             statusText: "Lyrics synced",
             trackText: nil,
             showsTrackWhenLyricsMissing: true,
-            settings: settings
+            settings: settings,
+            ktvEnabled: settings.floatingLyricsKTVEnabled,
+            backgroundOpacity: settings.floatingLyricsBackgroundOpacity
         )
 
         try expectEqual(presentation.usesKTV, false)
