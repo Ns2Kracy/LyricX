@@ -18,6 +18,7 @@ struct LyricXUnitTests {
         try testFloatingPresentationUsesOffsetsForLineSelection()
         try testFloatingPresentationBuildsKTVSegmentsWhenTimedSegmentsExist()
         try testFloatingPresentationFallsBackWithoutTimedSegments()
+        try testFloatingPresentationCompatibilityFactoryUsesFloatingSettings()
         try testIslandLayoutConstrainsCollapsedSize()
         try testIslandLayoutConstrainsExpandedSize()
         try testIslandLayoutPlacesFrameAtTopCenter()
@@ -244,6 +245,31 @@ struct LyricXUnitTests {
         try expectEqual(presentation.usesKTV, false)
         try expectEqual(presentation.currentText, "Line only")
         try expectEqual(presentation.segments, [])
+    }
+
+    private static func testFloatingPresentationCompatibilityFactoryUsesFloatingSettings() throws {
+        let timeline = LyricTimeline(lines: [
+            LyricLine(
+                time: 10,
+                text: "Hello world",
+                segments: [LyricSegment(time: 10.0, text: "Hello ")]
+            )
+        ])
+        var settings = AppSettings.default
+        settings.floatingLyricsKTVEnabled = false
+        settings.floatingLyricsBackgroundOpacity = 0.44
+
+        let presentation = FloatingLyricsPresentation.make(
+            timeline: timeline,
+            playbackPosition: 10,
+            statusText: "Lyrics synced",
+            trackText: nil,
+            showsTrackWhenLyricsMissing: true,
+            settings: settings
+        )
+
+        try expectEqual(presentation.usesKTV, false)
+        try expectEqual(presentation.backgroundOpacity, 0.44)
     }
 
     private static func testIslandLayoutConstrainsCollapsedSize() throws {

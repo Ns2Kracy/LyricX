@@ -75,6 +75,26 @@ public struct LyricOverlayPresentation: Equatable, Sendable {
             backgroundOpacity: backgroundOpacity
         )
     }
+
+    public static func make(
+        timeline: LyricTimeline?,
+        playbackPosition: TimeInterval,
+        statusText: String,
+        trackText: String?,
+        showsTrackWhenLyricsMissing: Bool,
+        settings: AppSettings
+    ) -> LyricOverlayPresentation {
+        make(
+            timeline: timeline,
+            playbackPosition: playbackPosition,
+            statusText: statusText,
+            trackText: trackText,
+            showsTrackWhenLyricsMissing: showsTrackWhenLyricsMissing,
+            settings: settings,
+            ktvEnabled: settings.floatingLyricsKTVEnabled,
+            backgroundOpacity: settings.floatingLyricsBackgroundOpacity
+        )
+    }
 }
 
 public typealias FloatingLyricsSegmentPresentation = LyricOverlaySegmentPresentation
