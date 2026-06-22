@@ -86,6 +86,16 @@ final class IslandLyricsController {
         IslandLyricsView(
             presentation: model.islandLyricsPresentation(at: date),
             isExpanded: displayState == .expanded,
+            onToggleExpanded: { [weak self] in
+                MainActor.assumeIsolated {
+                    self?.toggleExpanded(date: Date())
+                }
+            },
+            onHoverChanged: { [weak self] isHovering in
+                MainActor.assumeIsolated {
+                    self?.setHovering(isHovering, date: Date())
+                }
+            },
             onClose: { [weak self] in
                 MainActor.assumeIsolated {
                     self?.model.showsIslandLyrics = false
@@ -105,6 +115,32 @@ final class IslandLyricsController {
                 }
             }
         )
+    }
+
+    private func toggleExpanded(date: Date) {
+        setDisplayState(displayState == .expanded ? .collapsed : .expanded, date: date)
+    }
+
+    private func setHovering(_ isHovering: Bool, date: Date) {
+        guard model.islandLyricsAutoExpandOnHover else {
+            return
+        }
+
+        setDisplayState(isHovering ? .expanded : .collapsed, date: date)
+    }
+
+    private func setDisplayState(_ state: IslandLyricsDisplayState, date: Date) {
+        guard displayState != state else {
+            return
+        }
+
+        displayState = state
+        guard let panel else {
+            return
+        }
+
+        hostingController?.rootView = islandLyricsView(date: date)
+        updateFrame(for: panel, date: date, animated: panel.isVisible)
     }
 
     private func applyPanelBehavior(_ panel: NSPanel) {

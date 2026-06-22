@@ -4,6 +4,8 @@ import SwiftUI
 struct IslandLyricsView: View {
     let presentation: LyricOverlayPresentation
     let isExpanded: Bool
+    let onToggleExpanded: () -> Void
+    let onHoverChanged: (Bool) -> Void
     let onClose: () -> Void
     let onToggleClickThrough: () -> Void
     let onOpenSettings: () -> Void
@@ -26,6 +28,12 @@ struct IslandLyricsView: View {
                 .stroke(Color.white.opacity(0.14), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.22), radius: 18, x: 0, y: 8)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onToggleExpanded)
+        .onHover(perform: onHoverChanged)
+        .accessibilityAction(named: isExpanded ? "Collapse Island Lyrics" : "Expand Island Lyrics") {
+            onToggleExpanded()
+        }
         .animation(.snappy(duration: 0.22), value: isExpanded)
     }
 
