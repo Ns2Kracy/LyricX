@@ -27,6 +27,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var floatingLyricsLineOffsetMs: Int
     public var floatingLyricsSegmentOffsetMs: Int
     public var floatingLyricsWindowFrame: FloatingLyricsWindowFrame?
+    public var showsIslandLyrics: Bool
+    public var islandLyricsAutoExpandOnHover: Bool
+    public var islandLyricsClickThrough: Bool
+    public var islandLyricsKTVEnabled: Bool
+    public var islandLyricsBackgroundOpacity: Double
 
     public init(
         showsLyrics: Bool = true,
@@ -40,7 +45,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         floatingLyricsLyricOffsetMs: Int = 0,
         floatingLyricsLineOffsetMs: Int = 0,
         floatingLyricsSegmentOffsetMs: Int = 0,
-        floatingLyricsWindowFrame: FloatingLyricsWindowFrame? = nil
+        floatingLyricsWindowFrame: FloatingLyricsWindowFrame? = nil,
+        showsIslandLyrics: Bool = false,
+        islandLyricsAutoExpandOnHover: Bool = true,
+        islandLyricsClickThrough: Bool = false,
+        islandLyricsKTVEnabled: Bool = true,
+        islandLyricsBackgroundOpacity: Double = 0.82
     ) {
         self.showsLyrics = showsLyrics
         self.showsTrackWhenLyricsMissing = showsTrackWhenLyricsMissing
@@ -54,6 +64,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.floatingLyricsLineOffsetMs = floatingLyricsLineOffsetMs
         self.floatingLyricsSegmentOffsetMs = floatingLyricsSegmentOffsetMs
         self.floatingLyricsWindowFrame = floatingLyricsWindowFrame
+        self.showsIslandLyrics = showsIslandLyrics
+        self.islandLyricsAutoExpandOnHover = islandLyricsAutoExpandOnHover
+        self.islandLyricsClickThrough = islandLyricsClickThrough
+        self.islandLyricsKTVEnabled = islandLyricsKTVEnabled
+        self.islandLyricsBackgroundOpacity = islandLyricsBackgroundOpacity
     }
 
     public init(from decoder: Decoder) throws {
@@ -72,6 +87,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
         floatingLyricsLineOffsetMs = try container.decodeIfPresent(Int.self, forKey: .floatingLyricsLineOffsetMs) ?? defaults.floatingLyricsLineOffsetMs
         floatingLyricsSegmentOffsetMs = try container.decodeIfPresent(Int.self, forKey: .floatingLyricsSegmentOffsetMs) ?? defaults.floatingLyricsSegmentOffsetMs
         floatingLyricsWindowFrame = try container.decodeIfPresent(FloatingLyricsWindowFrame.self, forKey: .floatingLyricsWindowFrame)
+        showsIslandLyrics = try container.decodeIfPresent(Bool.self, forKey: .showsIslandLyrics) ?? defaults.showsIslandLyrics
+        islandLyricsAutoExpandOnHover = try container.decodeIfPresent(Bool.self, forKey: .islandLyricsAutoExpandOnHover) ?? defaults.islandLyricsAutoExpandOnHover
+        islandLyricsClickThrough = try container.decodeIfPresent(Bool.self, forKey: .islandLyricsClickThrough) ?? defaults.islandLyricsClickThrough
+        islandLyricsKTVEnabled = try container.decodeIfPresent(Bool.self, forKey: .islandLyricsKTVEnabled) ?? defaults.islandLyricsKTVEnabled
+        islandLyricsBackgroundOpacity = try container.decodeIfPresent(Double.self, forKey: .islandLyricsBackgroundOpacity) ?? defaults.islandLyricsBackgroundOpacity
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -87,6 +107,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case floatingLyricsLineOffsetMs
         case floatingLyricsSegmentOffsetMs
         case floatingLyricsWindowFrame
+        case showsIslandLyrics
+        case islandLyricsAutoExpandOnHover
+        case islandLyricsClickThrough
+        case islandLyricsKTVEnabled
+        case islandLyricsBackgroundOpacity
     }
 }
 

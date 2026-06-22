@@ -57,6 +57,9 @@ struct LyricXUnitTests {
         try testAppSettingsDefaultsIncludeFloatingLyrics()
         try testAppSettingsDecodesLegacyJSONWithFloatingDefaults()
         try testAppSettingsStoreSavesAndLoadsFloatingLyrics()
+        try testAppSettingsDefaultsIncludeIslandLyrics()
+        try testAppSettingsDecodesLegacyJSONWithIslandDefaults()
+        try testAppSettingsStoreSavesAndLoadsIslandLyrics()
         try testAppVersionComparisonFindsNewerPatch()
         try testAppVersionIgnoresLeadingV()
         try testGitHubReleaseDecoderFindsPackageAsset()
@@ -604,6 +607,51 @@ struct LyricXUnitTests {
         settings.floatingLyricsLineOffsetMs = -80
         settings.floatingLyricsSegmentOffsetMs = 35
         settings.floatingLyricsWindowFrame = FloatingLyricsWindowFrame(x: 100, y: 200, width: 720, height: 120)
+
+        try store.save(settings)
+        let loaded = try store.load()
+
+        try? FileManager.default.removeItem(at: url)
+        try expectEqual(loaded, settings)
+    }
+
+    private static func testAppSettingsDefaultsIncludeIslandLyrics() throws {
+        let settings = AppSettings.default
+
+        try expectEqual(settings.showsIslandLyrics, false)
+        try expectEqual(settings.islandLyricsAutoExpandOnHover, true)
+        try expectEqual(settings.islandLyricsClickThrough, false)
+        try expectEqual(settings.islandLyricsKTVEnabled, true)
+        try expectEqual(settings.islandLyricsBackgroundOpacity, 0.82)
+    }
+
+    private static func testAppSettingsDecodesLegacyJSONWithIslandDefaults() throws {
+        let data = Data("""
+        {
+          "showsLyrics" : true,
+          "showsTrackWhenLyricsMissing" : true,
+          "menuBarFrameRate" : 60
+        }
+        """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        try expectEqual(settings.showsIslandLyrics, false)
+        try expectEqual(settings.islandLyricsAutoExpandOnHover, true)
+        try expectEqual(settings.islandLyricsClickThrough, false)
+        try expectEqual(settings.islandLyricsKTVEnabled, true)
+        try expectEqual(settings.islandLyricsBackgroundOpacity, 0.82)
+    }
+
+    private static func testAppSettingsStoreSavesAndLoadsIslandLyrics() throws {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        let store = AppSettingsStore(fileURL: url)
+        var settings = AppSettings.default
+        settings.showsIslandLyrics = true
+        settings.islandLyricsAutoExpandOnHover = false
+        settings.islandLyricsClickThrough = true
+        settings.islandLyricsKTVEnabled = false
+        settings.islandLyricsBackgroundOpacity = 0.55
 
         try store.save(settings)
         let loaded = try store.load()
