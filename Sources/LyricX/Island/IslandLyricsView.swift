@@ -19,12 +19,12 @@ struct IslandLyricsView: View {
             }
         }
         .padding(.horizontal, isExpanded ? 18 : 14)
-        .padding(.vertical, isExpanded ? 12 : 7)
+        .padding(.vertical, isExpanded ? 12 : 3)
         .background(.ultraThinMaterial)
         .background(Color.black.opacity(presentation.backgroundOpacity))
-        .clipShape(RoundedRectangle(cornerRadius: isExpanded ? 24 : 19, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: isExpanded ? 24 : 11, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: isExpanded ? 24 : 19, style: .continuous)
+            RoundedRectangle(cornerRadius: isExpanded ? 24 : 11, style: .continuous)
                 .stroke(Color.white.opacity(0.14), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.22), radius: 18, x: 0, y: 8)
@@ -39,7 +39,7 @@ struct IslandLyricsView: View {
 
     private var collapsedBody: some View {
         Text(presentation.currentText)
-            .font(.system(size: 14, weight: .medium))
+            .font(.system(size: 12, weight: .medium))
             .foregroundStyle(.white.opacity(0.78))
             .lineLimit(1)
             .minimumScaleFactor(0.55)

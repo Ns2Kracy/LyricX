@@ -280,7 +280,7 @@ struct LyricXUnitTests {
         )
 
         try expectEqual(size.width, 420)
-        try expectEqual(size.height, 38)
+        try expectEqual(size.height, 22)
     }
 
     private static func testIslandLayoutConstrainsExpandedSize() throws {
@@ -303,9 +303,9 @@ struct LyricXUnitTests {
         )
 
         try expectEqual(frame.x, 590)
-        try expectEqual(frame.y, 854)
+        try expectEqual(frame.y, 870)
         try expectEqual(frame.width, 260)
-        try expectEqual(frame.height, 38)
+        try expectEqual(frame.height, 22)
     }
 
     private static func testIslandLayoutPlacesFrameInMenuBarCenter() throws {
@@ -320,9 +320,9 @@ struct LyricXUnitTests {
         )
 
         try expectEqual(frame.x, 590)
-        try expectEqual(frame.y, 862)
+        try expectEqual(frame.y, 876.5)
         try expectEqual(frame.width, 260)
-        try expectEqual(frame.height, 38)
+        try expectEqual(frame.height, 22)
     }
 
     private static func testIslandLayoutDoesNotExceedNarrowVisibleFrame() throws {

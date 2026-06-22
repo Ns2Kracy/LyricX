@@ -36,7 +36,7 @@ public enum IslandLyricsLayout {
     ) -> Size {
         switch state {
         case .collapsed:
-            return Size(width: min(max(preferredContentWidth, 180), 420), height: 38)
+            return Size(width: min(max(preferredContentWidth, 180), 420), height: 22)
         case .expanded:
             return Size(width: min(max(preferredContentWidth, 520), 680), height: 128)
         }

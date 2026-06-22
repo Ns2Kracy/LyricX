@@ -11,6 +11,7 @@ final class IslandLyricsController {
     private var timer: Timer?
     private var lastFrameRate: MenuBarAnimationFrameRate?
     private var displayState = IslandLyricsDisplayState.collapsed
+    private var hoverCollapseTask: Task<Void, Never>?
 
     init(model: AppModel, openSettings: @escaping () -> Void) {
         self.model = model
@@ -38,6 +39,7 @@ final class IslandLyricsController {
         }
 
         guard model.showsIslandLyrics else {
+            hoverCollapseTask?.cancel()
             panel?.orderOut(nil)
             displayState = .collapsed
             return
@@ -118,6 +120,7 @@ final class IslandLyricsController {
     }
 
     private func toggleExpanded(date: Date) {
+        hoverCollapseTask?.cancel()
         setDisplayState(displayState == .expanded ? .collapsed : .expanded, date: date)
     }
 
@@ -126,7 +129,24 @@ final class IslandLyricsController {
             return
         }
 
-        setDisplayState(isHovering ? .expanded : .collapsed, date: date)
+        hoverCollapseTask?.cancel()
+
+        if isHovering {
+            setDisplayState(.expanded, date: date)
+            return
+        }
+
+        hoverCollapseTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: 350_000_000)
+            } catch {
+                return
+            }
+
+            await MainActor.run {
+                self?.setDisplayState(.collapsed, date: Date())
+            }
+        }
     }
 
     private func setDisplayState(_ state: IslandLyricsDisplayState, date: Date) {
