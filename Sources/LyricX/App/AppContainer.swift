@@ -6,6 +6,7 @@ final class AppContainer {
     let mainWindowController: MainWindowController
     let menuBarController: MenuBarStatusItemController
     let floatingLyricsController: FloatingLyricsController
+    let islandLyricsController: IslandLyricsController
 
     init() {
         let model = AppModel()
@@ -14,6 +15,9 @@ final class AppContainer {
         self.model = model
         self.mainWindowController = mainWindowController
         self.floatingLyricsController = FloatingLyricsController(model: model)
+        self.islandLyricsController = IslandLyricsController(model: model) {
+            mainWindowController.showWindow()
+        }
         self.menuBarController = MenuBarStatusItemController(model: model) {
             mainWindowController.showWindow()
         }
