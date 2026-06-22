@@ -4,39 +4,23 @@
   "type": "module",
   "scripts": {
     "dev": "vp dev --port 3000",
-    "generate-routes": "tsr generate",
     "build": "vp build",
-    "deploy": "bunx wrangler deploy",
-    "deploy:dry-run": "bunx wrangler deploy --dry-run",
-    "start": "node .output/server/index.mjs",
-    "preview": "vp preview",
-    "test": "vp test run"
+    "check": "tsc --noEmit",
+    "deploy": "bun run build && bunx wrangler deploy",
+    "deploy:dry-run": "bun run build && bunx wrangler deploy --dry-run",
+    "preview": "vp preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
-    "@tanstack/router-plugin": "^1.133.21",
-    "@tanstack/solid-router": "latest",
-    "@tanstack/solid-router-devtools": "latest",
-    "@tanstack/solid-router-ssr-query": "latest",
-    "@tanstack/solid-start": "latest",
-    "nitro": "npm:nitro-nightly@latest",
-    "solid-js": "^1.9.12",
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
-    "@solidjs/testing-library": "^0.8.10",
-    "@tanstack/devtools-vite": "latest",
-    "@tanstack/router-cli": "^1.133.21",
-    "jsdom": "^28.1.0",
     "typescript": "^6.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vite-plugin-solid": "^2.11.12",
-    "vite-plus": "latest",
-    "vitest": "4.1.9"
+    "vite-plus": "latest"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "4.1.9"
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
