@@ -27,8 +27,6 @@ struct IslandLyricsView: View {
         )
         .shadow(color: Color.black.opacity(0.22), radius: 18, x: 0, y: 8)
         .animation(.snappy(duration: 0.22), value: isExpanded)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(presentation.currentText)
     }
 
     private var collapsedBody: some View {
@@ -38,6 +36,8 @@ struct IslandLyricsView: View {
             .lineLimit(1)
             .minimumScaleFactor(0.55)
             .frame(maxWidth: .infinity, alignment: .center)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(presentation.currentText)
     }
 
     private var expandedBody: some View {
@@ -70,22 +70,42 @@ struct IslandLyricsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 if presentation.usesKTV {
                     ktvLine
+                    nextLyricText
                 } else {
-                    Text(presentation.currentText)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.62)
-                }
-
-                if let nextText = presentation.nextText {
-                    Text(nextText)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.54))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    expandedLyricText
                 }
             }
+        }
+    }
+
+    private var expandedLyricText: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(presentation.currentText)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+
+            if let nextText = presentation.nextText {
+                Text(nextText)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.54))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(presentation.currentText)
+    }
+
+    @ViewBuilder
+    private var nextLyricText: some View {
+        if let nextText = presentation.nextText {
+            Text(nextText)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.54))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 
@@ -99,6 +119,8 @@ struct IslandLyricsView: View {
         .font(.system(size: 20, weight: .semibold))
         .lineLimit(1)
         .minimumScaleFactor(0.62)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(presentation.currentText)
     }
 
     private func islandButton(_ systemName: String, action: @escaping () -> Void, help: String) -> some View {
