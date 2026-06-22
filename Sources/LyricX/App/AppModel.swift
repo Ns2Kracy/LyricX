@@ -94,6 +94,46 @@ final class AppModel {
         }
     }
 
+    var showsIslandLyrics: Bool {
+        get { settings.showsIslandLyrics }
+        set {
+            settings.showsIslandLyrics = newValue
+            persistSettings()
+        }
+    }
+
+    var islandLyricsAutoExpandOnHover: Bool {
+        get { settings.islandLyricsAutoExpandOnHover }
+        set {
+            settings.islandLyricsAutoExpandOnHover = newValue
+            persistSettings()
+        }
+    }
+
+    var islandLyricsClickThrough: Bool {
+        get { settings.islandLyricsClickThrough }
+        set {
+            settings.islandLyricsClickThrough = newValue
+            persistSettings()
+        }
+    }
+
+    var islandLyricsKTVEnabled: Bool {
+        get { settings.islandLyricsKTVEnabled }
+        set {
+            settings.islandLyricsKTVEnabled = newValue
+            persistSettings()
+        }
+    }
+
+    var islandLyricsBackgroundOpacity: Double {
+        get { settings.islandLyricsBackgroundOpacity }
+        set {
+            settings.islandLyricsBackgroundOpacity = min(max(newValue, 0), 1)
+            persistSettings()
+        }
+    }
+
     var floatingLyricsLyricOffsetMs: Int {
         get { settings.floatingLyricsLyricOffsetMs }
         set {
@@ -209,6 +249,19 @@ final class AppModel {
 
     func floatingLyricsPresentation(at date: Date = Date()) -> LyricOverlayPresentation {
         lyricOverlayPresentation(at: date)
+    }
+
+    func islandLyricsPresentation(at date: Date = Date()) -> LyricOverlayPresentation {
+        LyricOverlayPresentation.make(
+            timeline: timeline,
+            playbackPosition: estimatedPlaybackPosition(at: date),
+            statusText: lyricsStatus,
+            trackText: playback.track.map { "\($0.title) - \($0.artist)" },
+            showsTrackWhenLyricsMissing: showsTrackWhenLyricsMissing,
+            settings: settings,
+            ktvEnabled: settings.islandLyricsKTVEnabled,
+            backgroundOpacity: settings.islandLyricsBackgroundOpacity
+        )
     }
 
     func refreshLyricContext(at date: Date = Date()) {

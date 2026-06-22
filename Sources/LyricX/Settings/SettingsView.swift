@@ -86,10 +86,29 @@ struct SettingsView: View {
                 offsetStepper("Line Offset", value: $model.floatingLyricsLineOffsetMs)
                 offsetStepper("KTV Segment Offset", value: $model.floatingLyricsSegmentOffsetMs)
             }
+
+            Section("Island Lyrics") {
+                Toggle("Show Island Lyrics", isOn: $model.showsIslandLyrics)
+                Toggle("Auto Expand on Hover", isOn: $model.islandLyricsAutoExpandOnHover)
+                Toggle("Click Through", isOn: $model.islandLyricsClickThrough)
+                Toggle("KTV Mode", isOn: $model.islandLyricsKTVEnabled)
+
+                HStack(spacing: 12) {
+                    Text("Background Opacity")
+                        .frame(width: 150, alignment: .leading)
+
+                    Slider(value: $model.islandLyricsBackgroundOpacity, in: 0...1, step: 0.05)
+
+                    Text("\(Int(model.islandLyricsBackgroundOpacity * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 42, alignment: .trailing)
+                }
+            }
         }
         .formStyle(.grouped)
         .padding(20)
-        .frame(minWidth: 520, idealWidth: 560, minHeight: 500, idealHeight: 540)
+        .frame(minWidth: 560, idealWidth: 620, minHeight: 620, idealHeight: 680)
     }
 
     private var activePresetBinding: Binding<LyricStylePreset> {

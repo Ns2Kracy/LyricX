@@ -150,16 +150,28 @@ struct MenuBarContentView: View {
                 Label("Floating Lyrics", systemImage: "macwindow")
             }
 
+            Toggle(isOn: boolBinding(\.showsIslandLyrics)) {
+                Label("Island Lyrics", systemImage: "capsule")
+            }
+
             Toggle(isOn: boolBinding(\.floatingLyricsLocked)) {
                 Label("Lock Floating Lyrics", systemImage: "lock")
             }
 
             Toggle(isOn: boolBinding(\.floatingLyricsClickThrough)) {
-                Label("Click Through", systemImage: "cursorarrow.rays")
+                Label("Floating Click Through", systemImage: "cursorarrow.rays")
+            }
+
+            Toggle(isOn: boolBinding(\.islandLyricsClickThrough)) {
+                Label("Island Click Through", systemImage: "cursorarrow.rays")
             }
 
             Toggle(isOn: boolBinding(\.floatingLyricsKTVEnabled)) {
-                Label("KTV Mode", systemImage: "textformat")
+                Label("Floating KTV Mode", systemImage: "textformat")
+            }
+
+            Toggle(isOn: boolBinding(\.islandLyricsKTVEnabled)) {
+                Label("Island KTV Mode", systemImage: "textformat.alt")
             }
 
             Divider()
