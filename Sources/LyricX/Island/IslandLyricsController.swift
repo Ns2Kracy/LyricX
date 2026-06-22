@@ -157,9 +157,17 @@ final class IslandLyricsController {
     }
 
     private func frame(for date: Date) -> NSRect {
-        let visibleFrame = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let screen = NSScreen.main
+        let screenFrame = screen?.frame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let visibleFrame = screen?.visibleFrame ?? screenFrame
         let layoutFrame = IslandLyricsLayout.frame(
             in: IslandLyricsLayout.ScreenFrame(
+                x: screenFrame.origin.x,
+                y: screenFrame.origin.y,
+                width: screenFrame.width,
+                height: screenFrame.height
+            ),
+            visibleFrame: IslandLyricsLayout.ScreenFrame(
                 x: visibleFrame.origin.x,
                 y: visibleFrame.origin.y,
                 width: visibleFrame.width,
@@ -167,7 +175,7 @@ final class IslandLyricsController {
             ),
             state: displayState,
             preferredContentWidth: preferredContentWidth(for: date),
-            topInset: 6
+            topInset: 0
         )
 
         return NSRect(

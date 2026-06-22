@@ -58,4 +58,29 @@ public enum IslandLyricsLayout {
             height: size.height
         )
     }
+
+    public static func frame(
+        in screenFrame: ScreenFrame,
+        visibleFrame: ScreenFrame,
+        state: IslandLyricsDisplayState,
+        preferredContentWidth: Double,
+        topInset: Double
+    ) -> ScreenFrame {
+        let size = size(for: state, preferredContentWidth: preferredContentWidth)
+        let screenWidth = max(screenFrame.width, 0)
+        let width = min(size.width, screenWidth)
+        let screenMaxY = screenFrame.y + screenFrame.height
+        let visibleMaxY = visibleFrame.y + visibleFrame.height
+        let menuBarHeight = max(screenMaxY - visibleMaxY, 0)
+        let centeredInMenuBarY = visibleMaxY + (menuBarHeight - size.height) / 2
+        let topAttachedY = screenMaxY - size.height - topInset
+        let y = menuBarHeight > 0 ? min(centeredInMenuBarY, topAttachedY) : topAttachedY
+
+        return ScreenFrame(
+            x: screenFrame.x + (screenWidth - width) / 2,
+            y: y,
+            width: width,
+            height: size.height
+        )
+    }
 }
