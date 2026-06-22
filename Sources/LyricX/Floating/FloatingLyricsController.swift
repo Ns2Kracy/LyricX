@@ -79,7 +79,7 @@ final class FloatingLyricsController: NSObject, NSWindowDelegate {
         panel.hasShadow = true
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
-        panel.minSize = NSSize(width: 360, height: 92)
+        panel.minSize = NSSize(width: 360, height: 112)
         panel.maxSize = NSSize(width: 980, height: 260)
         panel.contentViewController = hostingController
         panel.delegate = self
