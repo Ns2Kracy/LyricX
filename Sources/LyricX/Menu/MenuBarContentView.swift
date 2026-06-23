@@ -146,33 +146,6 @@ struct MenuBarContentView: View {
                 Label("Show Track Fallback", systemImage: "music.note.list")
             }
 
-            Toggle(isOn: boolBinding(\.showsFloatingLyrics)) {
-                Label("Floating Lyrics", systemImage: "macwindow")
-            }
-
-            Toggle(isOn: boolBinding(\.showsIslandLyrics)) {
-                Label("Island Lyrics", systemImage: "capsule")
-            }
-
-            Toggle(isOn: boolBinding(\.floatingLyricsLocked)) {
-                Label("Lock Floating Lyrics", systemImage: "lock")
-            }
-
-            Toggle(isOn: boolBinding(\.floatingLyricsClickThrough)) {
-                Label("Floating Click Through", systemImage: "cursorarrow.rays")
-            }
-
-            Toggle(isOn: boolBinding(\.islandLyricsClickThrough)) {
-                Label("Island Click Through", systemImage: "cursorarrow.rays")
-            }
-
-            Toggle(isOn: boolBinding(\.floatingLyricsKTVEnabled)) {
-                Label("Floating KTV Mode", systemImage: "textformat")
-            }
-
-            Toggle(isOn: boolBinding(\.islandLyricsKTVEnabled)) {
-                Label("Island KTV Mode", systemImage: "textformat.alt")
-            }
 
             Divider()
 

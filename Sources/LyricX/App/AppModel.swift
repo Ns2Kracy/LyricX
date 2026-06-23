@@ -54,109 +54,6 @@ final class AppModel {
         }
     }
 
-    var showsFloatingLyrics: Bool {
-        get { settings.showsFloatingLyrics }
-        set {
-            settings.showsFloatingLyrics = newValue
-            persistSettings()
-        }
-    }
-
-    var floatingLyricsLocked: Bool {
-        get { settings.floatingLyricsLocked }
-        set {
-            settings.floatingLyricsLocked = newValue
-            persistSettings()
-        }
-    }
-
-    var floatingLyricsClickThrough: Bool {
-        get { settings.floatingLyricsClickThrough }
-        set {
-            settings.floatingLyricsClickThrough = newValue
-            persistSettings()
-        }
-    }
-
-    var floatingLyricsKTVEnabled: Bool {
-        get { settings.floatingLyricsKTVEnabled }
-        set {
-            settings.floatingLyricsKTVEnabled = newValue
-            persistSettings()
-        }
-    }
-
-    var floatingLyricsBackgroundOpacity: Double {
-        get { settings.floatingLyricsBackgroundOpacity }
-        set {
-            settings.floatingLyricsBackgroundOpacity = min(max(newValue, 0), 1)
-            persistSettings()
-        }
-    }
-
-    var showsIslandLyrics: Bool {
-        get { settings.showsIslandLyrics }
-        set {
-            settings.showsIslandLyrics = newValue
-            persistSettings()
-        }
-    }
-
-    var islandLyricsAutoExpandOnHover: Bool {
-        get { settings.islandLyricsAutoExpandOnHover }
-        set {
-            settings.islandLyricsAutoExpandOnHover = newValue
-            persistSettings()
-        }
-    }
-
-    var islandLyricsClickThrough: Bool {
-        get { settings.islandLyricsClickThrough }
-        set {
-            settings.islandLyricsClickThrough = newValue
-            persistSettings()
-        }
-    }
-
-    var islandLyricsKTVEnabled: Bool {
-        get { settings.islandLyricsKTVEnabled }
-        set {
-            settings.islandLyricsKTVEnabled = newValue
-            persistSettings()
-        }
-    }
-
-    var islandLyricsBackgroundOpacity: Double {
-        get { settings.islandLyricsBackgroundOpacity }
-        set {
-            settings.islandLyricsBackgroundOpacity = min(max(newValue, 0), 1)
-            persistSettings()
-        }
-    }
-
-    var floatingLyricsLyricOffsetMs: Int {
-        get { settings.floatingLyricsLyricOffsetMs }
-        set {
-            settings.floatingLyricsLyricOffsetMs = newValue
-            persistSettings()
-        }
-    }
-
-    var floatingLyricsLineOffsetMs: Int {
-        get { settings.floatingLyricsLineOffsetMs }
-        set {
-            settings.floatingLyricsLineOffsetMs = newValue
-            persistSettings()
-        }
-    }
-
-    var floatingLyricsSegmentOffsetMs: Int {
-        get { settings.floatingLyricsSegmentOffsetMs }
-        set {
-            settings.floatingLyricsSegmentOffsetMs = newValue
-            persistSettings()
-        }
-    }
 
     var activeStylePreset: LyricStylePreset {
         stylePresets.first { $0.id == activeStylePresetID } ?? LyricStylePreset.defaults[0]
@@ -234,35 +131,6 @@ final class AppModel {
         return timeline.context(at: estimatedPlaybackPosition(at: date))
     }
 
-    func lyricOverlayPresentation(at date: Date = Date()) -> LyricOverlayPresentation {
-        LyricOverlayPresentation.make(
-            timeline: timeline,
-            playbackPosition: estimatedPlaybackPosition(at: date),
-            statusText: lyricsStatus,
-            trackText: playback.track.map { "\($0.title) - \($0.artist)" },
-            showsTrackWhenLyricsMissing: showsTrackWhenLyricsMissing,
-            settings: settings,
-            ktvEnabled: settings.floatingLyricsKTVEnabled,
-            backgroundOpacity: settings.floatingLyricsBackgroundOpacity
-        )
-    }
-
-    func floatingLyricsPresentation(at date: Date = Date()) -> LyricOverlayPresentation {
-        lyricOverlayPresentation(at: date)
-    }
-
-    func islandLyricsPresentation(at date: Date = Date()) -> LyricOverlayPresentation {
-        LyricOverlayPresentation.make(
-            timeline: timeline,
-            playbackPosition: estimatedPlaybackPosition(at: date),
-            statusText: lyricsStatus,
-            trackText: playback.track.map { "\($0.title) - \($0.artist)" },
-            showsTrackWhenLyricsMissing: showsTrackWhenLyricsMissing,
-            settings: settings,
-            ktvEnabled: settings.islandLyricsKTVEnabled,
-            backgroundOpacity: settings.islandLyricsBackgroundOpacity
-        )
-    }
 
     func refreshLyricContext(at date: Date = Date()) {
         updateActiveLines(at: estimatedPlaybackPosition(at: date))
@@ -378,14 +246,6 @@ final class AppModel {
         persistPresetState()
     }
 
-    func updateFloatingLyricsWindowFrame(_ frame: FloatingLyricsWindowFrame) {
-        guard settings.floatingLyricsWindowFrame != frame else {
-            return
-        }
-
-        settings.floatingLyricsWindowFrame = frame
-        persistSettings()
-    }
 
     private func pollOnce() async {
         let service = playbackService
