@@ -12,7 +12,7 @@ struct MenuBarContentView: View {
     var body: some View {
         nowPlayingPanel
             .padding(12)
-            .frame(width: 300, height: 150)
+            .frame(width: 320, height: 168)
     }
 
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, Bool>) -> Binding<Bool> {
@@ -49,11 +49,27 @@ struct MenuBarContentView: View {
                 }
 
                 Spacer(minLength: 0)
+                lyricContextBlock
+                Spacer(minLength: 0)
                 playbackToolbar
                 Spacer(minLength: 0)
                 progressBlock
             }
             .frame(height: 120)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var lyricContextBlock: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(currentLyricText)
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+
+            Text(nextLyricText)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -163,6 +179,22 @@ struct MenuBarContentView: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .help("More")
+    }
+
+    private var currentLyricText: String {
+        if let text = model.currentLine?.text.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            return text
+        }
+
+        return model.lyricsStatus
+    }
+
+    private var nextLyricText: String {
+        if let text = model.nextLine?.text.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            return text
+        }
+
+        return model.trackSummary
     }
 
     private var canControlPlayback: Bool {

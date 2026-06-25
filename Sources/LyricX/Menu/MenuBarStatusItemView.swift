@@ -15,6 +15,8 @@ final class MenuBarStatusItemView: NSControl {
     private var date = Date()
     private var clickFeedback = MenuBarClickFeedbackState()
     private var clickReleaseMonitors: [Any] = []
+    private var cachedTextKey: AttributedTextKey?
+    private var cachedAttributedText: NSAttributedString?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -113,11 +115,11 @@ final class MenuBarStatusItemView: NSControl {
     }
 
     private func width(for presentation: MenuBarPresentation) -> CGFloat {
-        CGFloat(max(24, layout(for: presentation, attributedText: attributedText(color: .labelColor)).statusItemWidth))
+        CGFloat(max(24, layout(for: presentation, attributedText: attributedText()).statusItemWidth))
     }
 
     private func textDrawingRect() -> NSRect {
-        let text = attributedText(color: .labelColor)
+        let text = attributedText()
         let layout = layout(for: presentation, attributedText: text)
         let height = text.size().height
         return NSRect(
@@ -154,7 +156,7 @@ final class MenuBarStatusItemView: NSControl {
         context.saveGraphicsState()
         NSBezierPath(rect: rect).addClip()
 
-        let text = attributedText(color: color)
+        let text = attributedText()
         switch presentation.behavior {
         case .continuousMarquee(let contentWidth, let startedAt):
             let marquee = MenuBarTimelineMarquee(viewportWidth: Double(rect.width))
@@ -181,14 +183,22 @@ final class MenuBarStatusItemView: NSControl {
         tinted(image: image, color: color).draw(in: rect)
     }
 
-    private func attributedText(color: NSColor) -> NSAttributedString {
-        NSAttributedString(
+    private func attributedText() -> NSAttributedString {
+        let key = AttributedTextKey(presentation: presentation)
+        if cachedTextKey == key, let cachedAttributedText {
+            return cachedAttributedText
+        }
+
+        let text = NSAttributedString(
             string: presentation.text,
             attributes: [
                 .font: NSFont.systemFont(ofSize: CGFloat(presentation.style.fontSize), weight: presentation.style.fontWeight.appKitWeight),
-                .foregroundColor: color
+                .foregroundColor: textColor()
             ]
         )
+        cachedTextKey = key
+        cachedAttributedText = text
+        return text
     }
 
     private func alignedTextX(for text: NSAttributedString, in rect: NSRect) -> CGFloat {
@@ -218,6 +228,20 @@ final class MenuBarStatusItemView: NSControl {
         NSRect(origin: .zero, size: image.size).fill(using: .sourceAtop)
         image.unlockFocus()
         return image
+    }
+}
+
+private struct AttributedTextKey: Equatable {
+    let text: String
+    let fontSize: Double
+    let fontWeight: MenuBarFontWeight
+    let textColorHex: String
+
+    init(presentation: MenuBarPresentation) {
+        self.text = presentation.text
+        self.fontSize = presentation.style.fontSize
+        self.fontWeight = presentation.style.fontWeight
+        self.textColorHex = presentation.style.textColorHex
     }
 }
 
