@@ -88,6 +88,5 @@ Runtime verification should include a brief app launch and RSS sampling where po
 
 - Moving `menuBarWidth` out of style presets.
 - Adding per-preset frame rates.
-- Building a floating lyric window.
 - Reworking lyric timing semantics.
 - Adding advanced animation easing controls.

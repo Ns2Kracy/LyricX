@@ -45,7 +45,6 @@ The SwiftUI pixel offset itself is mostly a view-rendering concern. Verification
 - Changing lyric timing semantics.
 - Adding easing, delayed start, or configurable scroll speed.
 - Replacing fallback track-title/status marquee behavior.
-- Adding a floating desktop lyric window.
 - Persisting marquee preferences.
 
 ## Risks
