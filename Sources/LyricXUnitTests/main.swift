@@ -64,6 +64,7 @@ struct LyricXUnitTests {
         try testMenuBarDisplayTextAlternatesOriginalThenTranslation()
         try testMenuBarDisplayTextAlternatesOriginalThenRomaji()
         try testMenuBarDisplayTextFallsBackToOriginalWhenRomajiMissing()
+        try testMenuBarDisplayTextKeepsSourceWhenTranslationFailed()
         try testMenuBarClickFeedbackStaysVisibleWhilePressed()
         try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
         try testStylePresetCodableRoundTrip()
@@ -610,6 +611,19 @@ struct LyricXUnitTests {
 
         try expectEqual(text.text, "hello")
         try expectEqual(text.accessibilityText, "hello")
+    }
+
+    private static func testMenuBarDisplayTextKeepsSourceWhenTranslationFailed() throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+
+        let text = MenuBarLyricDisplayText.resolve(
+            sourceLine: source,
+            translationLine: nil,
+            mode: .alternateOriginalTranslation,
+            lineProgress: 0.9
+        )
+
+        try expectEqual(text.text, "君が好き")
     }
 
     private static func testMenuBarClickFeedbackStaysVisibleWhilePressed() throws {

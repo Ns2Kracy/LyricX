@@ -11,6 +11,8 @@ final class AppModel {
     var timeline: LyricTimeline?
     var currentLine: LyricLine?
     var nextLine: LyricLine?
+    var translationTimeline: LyricTranslationTimeline?
+    var translationStatus: LyricTranslationStatus = .disabled
     var artwork: TrackArtwork?
     var lyricsStatus = "Waiting for Spotify"
     var stylePresets = LyricStylePreset.defaults
@@ -23,9 +25,12 @@ final class AppModel {
     @ObservationIgnored private let settingsStore: AppSettingsStore
     @ObservationIgnored private let presetStore: LyricStylePresetStore
     @ObservationIgnored private let updateService: any UpdateService
+    @ObservationIgnored private let translationService: any LyricTranslationService
+    @ObservationIgnored private let translationCache: LyricTranslationCache
     @ObservationIgnored private let menuBarTextMetrics = MenuBarTextMetrics()
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var artworkTask: Task<Void, Never>?
+    @ObservationIgnored private var translationTask: Task<Void, Never>?
     @ObservationIgnored private var lastLyricsTrack: PlaybackTrack?
     @ObservationIgnored private var playbackUpdatedAt = Date()
 
@@ -50,6 +55,41 @@ final class AppModel {
         get { settings.menuBarFrameRate }
         set {
             settings.menuBarFrameRate = newValue
+            persistSettings()
+        }
+    }
+
+    var translationEnabled: Bool {
+        get { settings.translationEnabled }
+        set {
+            settings.translationEnabled = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var translationTargetLanguage: TranslationLanguage {
+        get { settings.translationTargetLanguage }
+        set {
+            settings.translationTargetLanguage = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var japaneseRomajiEnabled: Bool {
+        get { settings.japaneseRomajiEnabled }
+        set {
+            settings.japaneseRomajiEnabled = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var menuBarLyricDisplayMode: MenuBarLyricDisplayMode {
+        get { settings.menuBarLyricDisplayMode }
+        set {
+            settings.menuBarLyricDisplayMode = newValue
             persistSettings()
         }
     }
@@ -95,11 +135,19 @@ final class AppModel {
         if let line = timeline?.currentLine(at: position), let lyric = nonBlank(line.text) {
             let startedAt = lyricStartedAt(for: line, position: position, date: date)
             let targetDuration = menuBarTargetDuration(for: line)
+            let lineProgress = menuBarLineProgress(for: line, position: position)
+            let displayText = MenuBarLyricDisplayText.resolve(
+                sourceLine: line,
+                translationLine: translationTimeline?.line(for: line),
+                mode: settings.menuBarLyricDisplayMode,
+                lineProgress: lineProgress
+            )
+            let text = nonBlank(displayText.text) ?? lyric
             return MenuBarPresentation(
-                text: lyric,
-                accessibilityText: lyric,
+                text: text,
+                accessibilityText: displayText.accessibilityText,
                 symbol: nil,
-                behavior: menuBarBehavior(for: lyric, startedAt: startedAt, targetDuration: targetDuration, style: style),
+                behavior: menuBarBehavior(for: text, startedAt: startedAt, targetDuration: targetDuration, style: style),
                 style: style
             )
         }
@@ -146,13 +194,17 @@ final class AppModel {
             owner: "ns2kracy",
             repository: "LyricX",
             currentVersion: AppModel.currentAppVersion()
-        )
+        ),
+        translationService: any LyricTranslationService = LocalLyricTranslationService(),
+        translationCache: LyricTranslationCache = LyricTranslationCache()
     ) {
         self.playbackService = playbackService
         self.lyricsRepository = lyricsRepository
         self.settingsStore = settingsStore
         self.presetStore = presetStore
         self.updateService = updateService
+        self.translationService = translationService
+        self.translationCache = translationCache
         settings = (try? settingsStore.load()) ?? .default
         loadPresetState()
         startPolling()
@@ -161,6 +213,7 @@ final class AppModel {
     deinit {
         pollingTask?.cancel()
         artworkTask?.cancel()
+        translationTask?.cancel()
     }
 
     func startPolling() {
@@ -179,6 +232,9 @@ final class AppModel {
     func refreshLyrics() {
         guard let track = playback.track else {
             lyricsStatus = "No Spotify track to refresh"
+            translationTask?.cancel()
+            translationTimeline = nil
+            translationStatus = .disabled
             return
         }
 
@@ -186,6 +242,7 @@ final class AppModel {
             await self?.loadLyrics(for: track, bypassCache: true)
         }
     }
+
 
     func playPause() {
         runPlayerCommand { service in
@@ -262,6 +319,9 @@ final class AppModel {
             timeline = nil
             currentLine = nil
             nextLine = nil
+            translationTask?.cancel()
+            translationTimeline = nil
+            translationStatus = .disabled
             artwork = nil
             artworkTask?.cancel()
             lyricsStatus = snapshot.message ?? "Waiting for Spotify"
@@ -273,6 +333,9 @@ final class AppModel {
             timeline = nil
             currentLine = nil
             nextLine = nil
+            translationTask?.cancel()
+            translationTimeline = nil
+            translationStatus = settings.translationEnabled ? .loading : .disabled
             artwork = nil
             lyricsStatus = "Finding synced lyrics"
             loadArtwork(for: track)
@@ -307,10 +370,13 @@ final class AppModel {
         }
 
         timeline = loadedTimeline
-        if loadedTimeline == nil {
-            lyricsStatus = "No synced lyrics for \(track.title)"
-        } else {
+        if let loadedTimeline {
             lyricsStatus = "Lyrics synced"
+            loadTranslation(for: track, sourceTimeline: loadedTimeline)
+        } else {
+            lyricsStatus = "No synced lyrics for \(track.title)"
+            translationTimeline = nil
+            translationStatus = settings.translationEnabled ? .failed("No source lyrics") : .disabled
         }
         updateActiveLines(at: playback.position)
     }
@@ -367,9 +433,81 @@ final class AppModel {
         return max(nextLine.time - line.time, 0)
     }
 
+    private func menuBarLineProgress(for line: LyricLine, position: TimeInterval) -> Double {
+        guard let duration = menuBarTargetDuration(for: line), duration > 0 else {
+            return 0
+        }
+
+        return min(max((position - line.time) / duration, 0), 1)
+    }
+
     private func menuBarBehavior(for text: String, startedAt: Date, targetDuration: TimeInterval?, style: MenuBarStyle) -> MenuBarTextBehavior {
         let contentWidth = Double(menuBarTextMetrics.width(for: text, style: style))
         return MenuBarTextBehavior.behavior(contentWidth: contentWidth, style: style, startedAt: startedAt, targetDuration: targetDuration)
+    }
+
+    private func reloadTranslationForCurrentTrack() {
+        guard let track = playback.track, let timeline else {
+            translationTask?.cancel()
+            translationTimeline = nil
+            translationStatus = settings.translationEnabled ? .loading : .disabled
+            return
+        }
+
+        loadTranslation(for: track, sourceTimeline: timeline)
+    }
+
+    private func loadTranslation(for track: PlaybackTrack, sourceTimeline: LyricTimeline) {
+        translationTask?.cancel()
+
+        guard settings.translationEnabled || settings.japaneseRomajiEnabled else {
+            translationTimeline = nil
+            translationStatus = .disabled
+            return
+        }
+
+        let targetLanguage = settings.translationTargetLanguage
+        let includeRomaji = settings.japaneseRomajiEnabled
+
+        if let cached = translationCache.cachedTimeline(
+            for: track,
+            sourceTimeline: sourceTimeline,
+            targetLanguage: targetLanguage,
+            includeRomaji: includeRomaji
+        ) {
+            translationTimeline = cached
+            translationStatus = .available
+            return
+        }
+
+        translationStatus = .loading
+        let service = translationService
+        let cache = translationCache
+        translationTask = Task { [weak self] in
+            do {
+                let loadedTimeline = try await service.translationTimeline(
+                    for: sourceTimeline,
+                    targetLanguage: targetLanguage,
+                    includeRomaji: includeRomaji
+                )
+                await MainActor.run {
+                    guard self?.playback.track == track, self?.timeline == sourceTimeline else {
+                        return
+                    }
+                    self?.translationTimeline = loadedTimeline
+                    self?.translationStatus = .available
+                    cache.store(loadedTimeline, for: track, sourceTimeline: sourceTimeline, includeRomaji: includeRomaji)
+                }
+            } catch {
+                await MainActor.run {
+                    guard self?.playback.track == track, self?.timeline == sourceTimeline else {
+                        return
+                    }
+                    self?.translationTimeline = nil
+                    self?.translationStatus = .failed(error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func updateActivePresetShowsTrackWhenLyricsMissing(_ value: Bool) {
