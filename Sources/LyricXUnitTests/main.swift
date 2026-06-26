@@ -58,6 +58,12 @@ struct LyricXUnitTests {
         try testMenuBarLayoutUsesPresetWidthForLongTextWithoutAccessory()
         try testMenuBarLayoutKeepsWidthStableForShortTextWithAccessory()
         try testMenuBarLayoutUsesPresetWidthForLongTextWithAccessory()
+        try testMenuBarDisplayTextUsesOriginalMode()
+        try testMenuBarDisplayTextFallsBackWhenTranslationMissing()
+        try testMenuBarDisplayTextUsesTranslationMode()
+        try testMenuBarDisplayTextAlternatesOriginalThenTranslation()
+        try testMenuBarDisplayTextAlternatesOriginalThenRomaji()
+        try testMenuBarDisplayTextFallsBackToOriginalWhenRomajiMissing()
         try testMenuBarClickFeedbackStaysVisibleWhilePressed()
         try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
         try testStylePresetCodableRoundTrip()
@@ -540,6 +546,70 @@ struct LyricXUnitTests {
         try expectEqual(layout.statusItemWidth, 254)
         try expectEqual(layout.textViewportMinX, 26)
         try expectEqual(layout.textViewportWidth, 220)
+    }
+
+    private static func testMenuBarDisplayTextUsesOriginalMode() throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let translation = LyricTranslationLine(sourceLineID: source.id, time: 10, translatedText: "I love you", romajiText: "kimi ga suki")
+
+        let text = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .original, lineProgress: 0.75)
+
+        try expectEqual(text.text, "君が好き")
+        try expectEqual(text.accessibilityText, "君が好き, I love you, kimi ga suki")
+    }
+
+    private static func testMenuBarDisplayTextFallsBackWhenTranslationMissing() throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+
+        let text = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: nil, mode: .translation, lineProgress: 0.75)
+
+        try expectEqual(text.text, "君が好き")
+        try expectEqual(text.accessibilityText, "君が好き")
+    }
+
+    private static func testMenuBarDisplayTextUsesTranslationMode() throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let translation = LyricTranslationLine(sourceLineID: source.id, time: 10, translatedText: "I love you", romajiText: nil)
+
+        let text = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .translation, lineProgress: 0.25)
+
+        try expectEqual(text.text, "I love you")
+        try expectEqual(text.accessibilityText, "君が好き, I love you")
+    }
+
+    private static func testMenuBarDisplayTextAlternatesOriginalThenTranslation() throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let translation = LyricTranslationLine(sourceLineID: source.id, time: 10, translatedText: "I love you", romajiText: nil)
+
+        let early = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .alternateOriginalTranslation, lineProgress: 0.25)
+        let late = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .alternateOriginalTranslation, lineProgress: 0.75)
+
+        try expectEqual(early.text, "君が好き")
+        try expectEqual(late.text, "I love you")
+        try expectEqual(early.accessibilityText, "君が好き, I love you")
+        try expectEqual(late.accessibilityText, "君が好き, I love you")
+    }
+
+    private static func testMenuBarDisplayTextAlternatesOriginalThenRomaji() throws {
+        let source = LyricLine(time: 10, text: "きみ が すき")
+        let translation = LyricTranslationLine(sourceLineID: source.id, time: 10, translatedText: nil, romajiText: "kimi ga suki")
+
+        let early = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .alternateOriginalRomaji, lineProgress: 0.25)
+        let late = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .alternateOriginalRomaji, lineProgress: 0.75)
+
+        try expectEqual(early.text, "きみ が すき")
+        try expectEqual(late.text, "kimi ga suki")
+        try expectEqual(early.accessibilityText, "きみ が すき, kimi ga suki")
+        try expectEqual(late.accessibilityText, "きみ が すき, kimi ga suki")
+    }
+
+    private static func testMenuBarDisplayTextFallsBackToOriginalWhenRomajiMissing() throws {
+        let source = LyricLine(time: 10, text: "hello")
+
+        let text = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: nil, mode: .alternateOriginalRomaji, lineProgress: 0.75)
+
+        try expectEqual(text.text, "hello")
+        try expectEqual(text.accessibilityText, "hello")
     }
 
     private static func testMenuBarClickFeedbackStaysVisibleWhilePressed() throws {
