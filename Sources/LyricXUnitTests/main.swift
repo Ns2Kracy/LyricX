@@ -15,6 +15,10 @@ struct LyricXUnitTests {
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
         try testTimelineReturnsNextLineAfterPosition()
         try testTimelineContextReturnsPreviousCurrentAndNextLine()
+        try testTranslationTimelineMatchesSourceLineByIDAndTime()
+        try testTranslationTimelineRejectsSameIDWithDifferentTime()
+        try testJapaneseRomajiRomanizesKana()
+        try testJapaneseRomajiReturnsNilForNonJapaneseText()
         try testTrackScopedLyricLoadRejectsStaleTrack()
         try testTrackScopedLyricLoadRejectsSupersededRequest()
         try testTrackScopedLyricLoadAcceptsCurrentTrack()
@@ -160,6 +164,40 @@ struct LyricXUnitTests {
         try expectEqual(context.previousLine, LyricLine(time: 10.0, text: "First"))
         try expectEqual(context.currentLine, LyricLine(time: 20.0, text: "Second"))
         try expectEqual(context.nextLine, LyricLine(time: 30.0, text: "Third"))
+    }
+
+    private static func testTranslationTimelineMatchesSourceLineByIDAndTime() throws {
+        let source = LyricLine(time: 12.0, text: "君が好き")
+        let translated = LyricTranslationLine(
+            sourceLineID: source.id,
+            time: source.time,
+            translatedText: "I love you",
+            romajiText: "kimi ga suki"
+        )
+        let timeline = LyricTranslationTimeline(targetLanguage: .english, lines: [translated])
+
+        try expectEqual(timeline.line(for: source), translated)
+    }
+
+    private static func testTranslationTimelineRejectsSameIDWithDifferentTime() throws {
+        let source = LyricLine(time: 12.0, text: "君が好き")
+        let shifted = LyricTranslationLine(
+            sourceLineID: source.id,
+            time: 13.0,
+            translatedText: "I love you",
+            romajiText: nil
+        )
+        let timeline = LyricTranslationTimeline(targetLanguage: .english, lines: [shifted])
+
+        try expectNil(timeline.line(for: source))
+    }
+
+    private static func testJapaneseRomajiRomanizesKana() throws {
+        try expectEqual(JapaneseRomaji.romanizedText(for: "きみ が すき"), "kimi ga suki")
+    }
+
+    private static func testJapaneseRomajiReturnsNilForNonJapaneseText() throws {
+        try expectNil(JapaneseRomaji.romanizedText(for: "hello world"))
     }
 
 
