@@ -18,6 +18,8 @@ struct LyricXUnitTests {
         try testTranslationTimelineMatchesSourceLineByIDAndTime()
         try testTranslationTimelineRejectsSameIDWithDifferentTime()
         try testJapaneseRomajiRomanizesKana()
+        try testJapaneseRomajiRomanizesSmallTsuAndLongVowelMark()
+        try testJapaneseRomajiRomanizesSmallYoonKana()
         try testJapaneseRomajiReturnsNilForNonJapaneseText()
         try testJapaneseRomajiReturnsNilForKanjiText()
         try testTrackScopedLyricLoadRejectsStaleTrack()
@@ -195,6 +197,14 @@ struct LyricXUnitTests {
 
     private static func testJapaneseRomajiRomanizesKana() throws {
         try expectEqual(JapaneseRomaji.romanizedText(for: "きみ が すき"), "kimi ga suki")
+    }
+
+    private static func testJapaneseRomajiRomanizesSmallTsuAndLongVowelMark() throws {
+        try expectEqual(JapaneseRomaji.romanizedText(for: "ハッピー"), "happii")
+    }
+
+    private static func testJapaneseRomajiRomanizesSmallYoonKana() throws {
+        try expectEqual(JapaneseRomaji.romanizedText(for: "きょう"), "kyou")
     }
 
     private static func testJapaneseRomajiReturnsNilForNonJapaneseText() throws {
