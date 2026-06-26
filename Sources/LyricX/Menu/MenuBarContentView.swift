@@ -11,8 +11,8 @@ struct MenuBarContentView: View {
 
     var body: some View {
         nowPlayingPanel
-            .padding(14)
-            .frame(width: 380, height: 180)
+            .padding(12)
+            .frame(width: 320, height: 168)
     }
 
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, Bool>) -> Binding<Bool> {
@@ -23,111 +23,105 @@ struct MenuBarContentView: View {
     }
 
     private var nowPlayingPanel: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 10) {
             ArtworkView(
                 artwork: model.artwork,
                 fallbackTitle: model.playback.track?.album ?? "LyricX",
-                size: 152
+                size: 120
             )
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
                 headerBlock
-                lyricContextBlock
+                Spacer(minLength: 0)
+                playbackToolbar
                 Spacer(minLength: 0)
                 progressBlock
-                playbackToolbar
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(height: 120)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var headerBlock: some View {
-        HStack(alignment: .top, spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .top, spacing: 4) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(model.playback.track?.title ?? "No Spotify Track")
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
 
                 Text(model.playback.track?.artist ?? model.playback.message ?? "Waiting for Spotify")
-                    .font(.caption)
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 2)
             utilityMenu
         }
     }
 
-    private var lyricContextBlock: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(currentLyricText)
-                .font(.callout.weight(.medium))
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(nextLyricText)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, minHeight: 46, alignment: .topLeading)
-    }
 
     private var playbackToolbar: some View {
-        HStack(spacing: 8) {
-            Button {
-                model.previousTrack()
-            } label: {
-                Label("Previous Track", systemImage: "backward.fill")
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 15, weight: .medium))
-                    .frame(maxWidth: .infinity, minHeight: 28)
+        ZStack {
+            HStack(spacing: 0) {
+                Button {
+                    model.previousTrack()
+                } label: {
+                    Label("Previous Track", systemImage: "backward.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .disabled(!canControlPlayback)
+                .help("Previous Track")
+                .frame(width: elapsedTimeColumnWidth, alignment: .trailing)
+
+                Spacer(minLength: 0)
+
+                Button {
+                    model.nextTrack()
+                } label: {
+                    Label("Next Track", systemImage: "forward.fill")
+                        .labelStyle(.iconOnly)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .disabled(!canControlPlayback)
+                .help("Next Track")
+                .frame(width: remainingTimeColumnWidth, alignment: .leading)
             }
-            .disabled(!canControlPlayback)
-            .help("Previous Track")
 
             Button {
                 model.playPause()
             } label: {
                 Label(playPauseTitle, systemImage: playPauseIcon)
                     .labelStyle(.iconOnly)
-                    .font(.system(size: 19, weight: .semibold))
-                    .frame(maxWidth: .infinity, minHeight: 28)
+                    .font(.system(size: 23, weight: .semibold))
             }
             .disabled(!canControlPlayback)
             .help(playPauseTitle)
-
-            Button {
-                model.nextTrack()
-            } label: {
-                Label("Next Track", systemImage: "forward.fill")
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 15, weight: .medium))
-                    .frame(maxWidth: .infinity, minHeight: 28)
-            }
-            .disabled(!canControlPlayback)
-            .help("Next Track")
+            .frame(width: 32, alignment: .center)
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.plain)
         .foregroundStyle(.secondary)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var progressBlock: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 4) {
             ProgressView(value: progressValue)
                 .progressViewStyle(.linear)
                 .controlSize(.mini)
 
             HStack {
                 Text(formatTime(model.playback.position))
+                    .frame(width: elapsedTimeColumnWidth, alignment: .trailing)
+
                 Spacer()
+
                 Text(remainingTimeText)
+                    .frame(width: remainingTimeColumnWidth, alignment: .trailing)
             }
             .font(.system(size: 10, weight: .regular, design: .monospaced))
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(.secondary)
         }
     }
 
@@ -174,21 +168,6 @@ struct MenuBarContentView: View {
         .help("More")
     }
 
-    private var currentLyricText: String {
-        if let text = model.currentLine?.text.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
-            return text
-        }
-
-        return model.lyricsStatus
-    }
-
-    private var nextLyricText: String {
-        if let text = model.nextLine?.text.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
-            return text
-        }
-
-        return model.trackSummary
-    }
 
     private var canControlPlayback: Bool {
         model.playback.state != .notRunning && model.playback.state != .unavailable
