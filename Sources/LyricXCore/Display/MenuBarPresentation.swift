@@ -72,14 +72,19 @@ public struct MenuBarStatusItemLayout: Equatable, Sendable {
 
 public enum MenuBarTextBehavior: Equatable, Sendable {
     case staticText
-    case continuousMarquee(contentWidth: Double, startedAt: Date)
+    case continuousMarquee(contentWidth: Double, startedAt: Date, targetDuration: TimeInterval?)
 
-    public static func behavior(contentWidth: Double, style: MenuBarStyle, startedAt: Date) -> MenuBarTextBehavior {
+    public static func behavior(
+        contentWidth: Double,
+        style: MenuBarStyle,
+        startedAt: Date,
+        targetDuration: TimeInterval? = nil
+    ) -> MenuBarTextBehavior {
         guard contentWidth > style.viewportWidth else {
             return .staticText
         }
 
-        return .continuousMarquee(contentWidth: contentWidth, startedAt: startedAt)
+        return .continuousMarquee(contentWidth: contentWidth, startedAt: startedAt, targetDuration: targetDuration)
     }
 }
 

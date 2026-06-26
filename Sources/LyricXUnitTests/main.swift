@@ -29,6 +29,7 @@ struct LyricXUnitTests {
         try testMenuBarAnimationFrameRateCodableRoundTrip()
         try testTimelineMarqueeOffsetPausesBeforeMoving()
         try testTimelineMarqueeOffsetMovesAtConfiguredSpeed()
+        try testTimelineMarqueeOffsetAdaptsToShortLyricDuration()
         try testTimelineMarqueeOffsetStopsAtEnd()
         try testTimelineMarqueeOffsetStaysZeroWithoutOverflow()
         try testTimelineMarqueeOffsetStaysAtEndAfterScrollCompletes()
@@ -271,6 +272,16 @@ struct LyricXUnitTests {
         try expectEqual(marquee.offset(elapsedTime: 1.8, contentWidth: 320), -34)
     }
 
+    private static func testTimelineMarqueeOffsetAdaptsToShortLyricDuration() throws {
+        let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
+
+        try expectEqual(marquee.effectiveStartPause(targetDuration: 1.8), 0.45)
+        try expectEqual(marquee.scrollDuration(contentWidth: 320, targetDuration: 1.8), 1.35)
+        try expectEqual(marquee.offset(elapsedTime: 1.8, contentWidth: 320, targetDuration: 1.8), -100)
+        try expectEqual(marquee.effectiveStartPause(targetDuration: 0.6), 0.15)
+        try expectEqual(marquee.offset(elapsedTime: 0.6, contentWidth: 320, targetDuration: 0.6), -100)
+    }
+
     private static func testTimelineMarqueeOffsetStopsAtEnd() throws {
         let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
 
@@ -388,7 +399,7 @@ struct LyricXUnitTests {
         let compact = MenuBarStyle(viewportWidth: 160, fontSize: 13, fontWeight: .medium, textColorHex: "#FFFFFF", alignment: .leading)
         let wide = MenuBarStyle(viewportWidth: 320, fontSize: 13, fontWeight: .medium, textColorHex: "#FFFFFF", alignment: .leading)
 
-        try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: compact, startedAt: startedAt), .continuousMarquee(contentWidth: 240, startedAt: startedAt))
+        try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: compact, startedAt: startedAt), .continuousMarquee(contentWidth: 240, startedAt: startedAt, targetDuration: nil))
         try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: wide, startedAt: startedAt), .staticText)
     }
 

@@ -94,11 +94,12 @@ final class AppModel {
         let position = estimatedPlaybackPosition(at: date)
         if let line = timeline?.currentLine(at: position), let lyric = nonBlank(line.text) {
             let startedAt = lyricStartedAt(for: line, position: position, date: date)
+            let targetDuration = menuBarTargetDuration(for: line)
             return MenuBarPresentation(
                 text: lyric,
                 accessibilityText: lyric,
                 symbol: nil,
-                behavior: menuBarBehavior(for: lyric, startedAt: startedAt, style: style),
+                behavior: menuBarBehavior(for: lyric, startedAt: startedAt, targetDuration: targetDuration, style: style),
                 style: style
             )
         }
@@ -109,7 +110,7 @@ final class AppModel {
                 text: title,
                 accessibilityText: title,
                 symbol: nil,
-                behavior: menuBarBehavior(for: title, startedAt: .menuBarReferenceStart, style: style),
+                behavior: menuBarBehavior(for: title, startedAt: .menuBarReferenceStart, targetDuration: nil, style: style),
                 style: style
             )
         }
@@ -118,7 +119,7 @@ final class AppModel {
             text: lyricsStatus,
             accessibilityText: lyricsStatus,
             symbol: menuBarSymbol,
-            behavior: menuBarBehavior(for: lyricsStatus, startedAt: .menuBarReferenceStart, style: style),
+            behavior: menuBarBehavior(for: lyricsStatus, startedAt: .menuBarReferenceStart, targetDuration: nil, style: style),
             style: style
         )
     }
@@ -358,9 +359,17 @@ final class AppModel {
         date.addingTimeInterval(line.time - position)
     }
 
-    private func menuBarBehavior(for text: String, startedAt: Date, style: MenuBarStyle) -> MenuBarTextBehavior {
+    private func menuBarTargetDuration(for line: LyricLine) -> TimeInterval? {
+        guard let nextLine = timeline?.nextLine(after: line.time) else {
+            return nil
+        }
+
+        return max(nextLine.time - line.time, 0)
+    }
+
+    private func menuBarBehavior(for text: String, startedAt: Date, targetDuration: TimeInterval?, style: MenuBarStyle) -> MenuBarTextBehavior {
         let contentWidth = Double(menuBarTextMetrics.width(for: text, style: style))
-        return MenuBarTextBehavior.behavior(contentWidth: contentWidth, style: style, startedAt: startedAt)
+        return MenuBarTextBehavior.behavior(contentWidth: contentWidth, style: style, startedAt: startedAt, targetDuration: targetDuration)
     }
 
     private func updateActivePresetShowsTrackWhenLyricsMissing(_ value: Bool) {

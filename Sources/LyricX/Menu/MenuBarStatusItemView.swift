@@ -141,7 +141,7 @@ final class MenuBarStatusItemView: NSControl {
 
     private func contentWidth(for presentation: MenuBarPresentation, attributedText: NSAttributedString) -> Double {
         switch presentation.behavior {
-        case .continuousMarquee(let contentWidth, _):
+        case .continuousMarquee(let contentWidth, _, _):
             return contentWidth
         case .staticText:
             return Double(ceil(attributedText.size().width))
@@ -158,9 +158,9 @@ final class MenuBarStatusItemView: NSControl {
 
         let text = attributedText()
         switch presentation.behavior {
-        case .continuousMarquee(let contentWidth, let startedAt):
+        case .continuousMarquee(let contentWidth, let startedAt, let targetDuration):
             let marquee = MenuBarTimelineMarquee(viewportWidth: Double(rect.width))
-            let offset = CGFloat(marquee.offset(elapsedTime: date.timeIntervalSince(startedAt), contentWidth: contentWidth))
+            let offset = CGFloat(marquee.offset(elapsedTime: date.timeIntervalSince(startedAt), contentWidth: contentWidth, targetDuration: targetDuration))
             text.draw(at: NSPoint(x: rect.minX + offset, y: rect.minY))
         case .staticText:
             text.draw(at: NSPoint(x: alignedTextX(for: text, in: rect), y: rect.minY))
