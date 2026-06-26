@@ -12,7 +12,7 @@ struct MenuBarContentView: View {
     var body: some View {
         nowPlayingPanel
             .padding(12)
-            .frame(width: 320, height: 168)
+            .frame(width: 320, height: 144)
     }
 
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, Bool>) -> Binding<Bool> {
