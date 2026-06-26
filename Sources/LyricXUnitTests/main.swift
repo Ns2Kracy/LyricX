@@ -53,6 +53,9 @@ struct LyricXUnitTests {
         try testStylePresetStoreSavesAndLoadsSelection()
         try testAppSettingsDefaultFrameRateIsThirtyFPS()
         try testAppSettingsStoreSavesAndLoadsFrameRate()
+        try testAppSettingsDecodesTranslationDefaultsFromOldJSON()
+        try testMenuBarLyricDisplayModeCodableRoundTrip()
+        try testTranslationLanguageCodableRoundTrip()
         try testAppVersionComparisonFindsNewerPatch()
         try testAppVersionIgnoresLeadingV()
         try testGitHubReleaseDecoderFindsPackageAsset()
@@ -499,6 +502,34 @@ struct LyricXUnitTests {
 
         try? FileManager.default.removeItem(at: url)
         try expectEqual(loaded, settings)
+    }
+
+    private static func testAppSettingsDecodesTranslationDefaultsFromOldJSON() throws {
+        let data = Data(#"{"showsLyrics":true,"showsTrackWhenLyricsMissing":false,"menuBarFrameRate":15}"#.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        try expectEqual(settings.showsLyrics, true)
+        try expectEqual(settings.showsTrackWhenLyricsMissing, false)
+        try expectEqual(settings.menuBarFrameRate, .fps15)
+        try expectEqual(settings.translationEnabled, false)
+        try expectEqual(settings.translationTargetLanguage, .system)
+        try expectEqual(settings.japaneseRomajiEnabled, false)
+        try expectEqual(settings.menuBarLyricDisplayMode, .original)
+    }
+
+    private static func testMenuBarLyricDisplayModeCodableRoundTrip() throws {
+        let encoded = try JSONEncoder().encode(MenuBarLyricDisplayMode.alternateOriginalTranslation)
+        let decoded = try JSONDecoder().decode(MenuBarLyricDisplayMode.self, from: encoded)
+
+        try expectEqual(decoded, .alternateOriginalTranslation)
+    }
+
+    private static func testTranslationLanguageCodableRoundTrip() throws {
+        let encoded = try JSONEncoder().encode(TranslationLanguage.simplifiedChinese)
+        let decoded = try JSONDecoder().decode(TranslationLanguage.self, from: encoded)
+
+        try expectEqual(decoded, .simplifiedChinese)
     }
 
 
