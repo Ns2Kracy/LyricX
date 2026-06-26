@@ -19,6 +19,7 @@ struct LyricXUnitTests {
         try testTranslationTimelineRejectsSameIDWithDifferentTime()
         try testJapaneseRomajiRomanizesKana()
         try testJapaneseRomajiReturnsNilForNonJapaneseText()
+        try testJapaneseRomajiReturnsNilForKanjiText()
         try testTrackScopedLyricLoadRejectsStaleTrack()
         try testTrackScopedLyricLoadRejectsSupersededRequest()
         try testTrackScopedLyricLoadAcceptsCurrentTrack()
@@ -198,6 +199,10 @@ struct LyricXUnitTests {
 
     private static func testJapaneseRomajiReturnsNilForNonJapaneseText() throws {
         try expectNil(JapaneseRomaji.romanizedText(for: "hello world"))
+    }
+
+    private static func testJapaneseRomajiReturnsNilForKanjiText() throws {
+        try expectNil(JapaneseRomaji.romanizedText(for: "君が好き"))
     }
 
 

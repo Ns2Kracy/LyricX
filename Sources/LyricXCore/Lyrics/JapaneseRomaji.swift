@@ -6,11 +6,17 @@ public enum JapaneseRomaji {
             return nil
         }
 
-        let tokens = text.map { character -> String in
+        var tokens: [String] = []
+        for character in text {
             if character.isWhitespace {
-                return " "
+                tokens.append(" ")
+            } else if let romanizedKana = kanaMap[character] {
+                tokens.append(romanizedKana)
+            } else if containsJapanese(String(character)) {
+                return nil
+            } else {
+                tokens.append(String(character))
             }
-            return kanaMap[character] ?? String(character)
         }
 
         let romanized = tokens.joined()
