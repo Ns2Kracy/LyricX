@@ -12,7 +12,7 @@ struct MenuBarContentView: View {
     var body: some View {
         nowPlayingPanel
             .padding(14)
-            .frame(width: 420, height: 190)
+            .frame(width: 380, height: 180)
     }
 
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, Bool>) -> Binding<Bool> {
@@ -27,7 +27,7 @@ struct MenuBarContentView: View {
             ArtworkView(
                 artwork: model.artwork,
                 fallbackTitle: model.playback.track?.album ?? "LyricX",
-                size: 162
+                size: 152
             )
 
             VStack(alignment: .leading, spacing: 10) {
