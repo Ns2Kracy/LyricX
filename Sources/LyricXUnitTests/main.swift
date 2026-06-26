@@ -1,6 +1,7 @@
 import Foundation
 import LyricXCore
 import LyricXMac
+@testable import LyricXApp
 
 @main
 struct LyricXUnitTests {
@@ -65,6 +66,7 @@ struct LyricXUnitTests {
         try testMenuBarDisplayTextAlternatesOriginalThenRomaji()
         try testMenuBarDisplayTextFallsBackToOriginalWhenRomajiMissing()
         try testMenuBarDisplayTextKeepsSourceWhenTranslationFailed()
+        try await testAppModelKeepsSourceMenuBarTextWhenTranslationFails()
         try testMenuBarClickFeedbackStaysVisibleWhilePressed()
         try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
         try testStylePresetCodableRoundTrip()
@@ -626,6 +628,29 @@ struct LyricXUnitTests {
         try expectEqual(text.text, "君が好き")
     }
 
+    @MainActor
+    private static func testAppModelKeepsSourceMenuBarTextWhenTranslationFails() async throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let timeline = LyricTimeline(lines: [source])
+        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
+        let model = AppModel(
+            settingsStore: AppSettingsStore(fileURL: temporaryFileURL(name: "app-model-settings.json")),
+            presetStore: LyricStylePresetStore(fileURL: temporaryFileURL(name: "app-model-presets.json")),
+            translationService: FailingLyricTranslationService(),
+            translationCache: LyricTranslationCache(directory: temporaryDirectoryURL(name: "app-model-translation-cache")),
+            startsPolling: false
+        )
+        model.playback = PlaybackSnapshot(state: .playing, track: track, position: 10.5)
+        model.timeline = timeline
+        model.settings.menuBarLyricDisplayMode = .alternateOriginalTranslation
+
+        model.translationEnabled = true
+        try await Task.sleep(nanoseconds: 20_000_000)
+
+        try expectEqual(model.translationStatus, .failed("translation unavailable"))
+        try expectEqual(model.menuBarPresentation(at: Date()).text, "君が好き")
+    }
+
     private static func testMenuBarClickFeedbackStaysVisibleWhilePressed() throws {
         var feedback = MenuBarClickFeedbackState()
         let pressGeneration = feedback.press()
@@ -813,6 +838,19 @@ struct LyricXUnitTests {
         return value
     }
 
+    private static func temporaryFileURL(name: String) -> URL {
+        let url = temporaryDirectoryURL(name: UUID().uuidString).appendingPathComponent(name)
+        try? FileManager.default.removeItem(at: url)
+        return url
+    }
+
+    private static func temporaryDirectoryURL(name: String) -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("LyricXUnitTests-\(name)", isDirectory: true)
+        try? FileManager.default.removeItem(at: url)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
     private static func queryValue(_ name: String, in components: URLComponents) -> String? {
         components.queryItems?.first { $0.name == name }?.value
     }
@@ -826,6 +864,20 @@ struct TestFailure: Error, CustomStringConvertible {
     var description: String {
         "\(file):\(line): \(message)"
     }
+}
+
+private struct FailingLyricTranslationService: LyricTranslationService {
+    func translationTimeline(
+        for sourceTimeline: LyricTimeline,
+        targetLanguage: TranslationLanguage,
+        includeRomaji: Bool
+    ) async throws -> LyricTranslationTimeline {
+        throw FailingLyricTranslationError()
+    }
+}
+
+private struct FailingLyricTranslationError: LocalizedError {
+    var errorDescription: String? { "translation unavailable" }
 }
 
 private final class ScriptRecorder: @unchecked Sendable {

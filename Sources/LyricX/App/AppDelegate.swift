@@ -1,10 +1,12 @@
 import AppKit
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+public final class AppDelegate: NSObject, NSApplicationDelegate {
     private var container: AppContainer?
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    public override init() {}
+
+    public func applicationDidFinishLaunching(_ notification: Notification) {
         container = AppContainer()
     }
 }

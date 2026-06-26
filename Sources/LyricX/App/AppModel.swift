@@ -196,7 +196,8 @@ final class AppModel {
             currentVersion: AppModel.currentAppVersion()
         ),
         translationService: any LyricTranslationService = LocalLyricTranslationService(),
-        translationCache: LyricTranslationCache = LyricTranslationCache()
+        translationCache: LyricTranslationCache = LyricTranslationCache(),
+        startsPolling: Bool = true
     ) {
         self.playbackService = playbackService
         self.lyricsRepository = lyricsRepository
@@ -207,7 +208,9 @@ final class AppModel {
         self.translationCache = translationCache
         settings = (try? settingsStore.load()) ?? .default
         loadPresetState()
-        startPolling()
+        if startsPolling {
+            startPolling()
+        }
     }
 
     deinit {

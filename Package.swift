@@ -10,6 +10,7 @@ let package = Package(
     products: [
         .library(name: "LyricXCore", targets: ["LyricXCore"]),
         .library(name: "LyricXMac", targets: ["LyricXMac"]),
+        .library(name: "LyricXApp", targets: ["LyricXApp"]),
         .executable(name: "LyricX", targets: ["LyricX"]),
         .executable(name: "LyricXUnitTests", targets: ["LyricXUnitTests"])
     ],
@@ -19,14 +20,20 @@ let package = Package(
             name: "LyricXMac",
             dependencies: ["LyricXCore"]
         ),
+        .target(
+            name: "LyricXApp",
+            dependencies: ["LyricXCore", "LyricXMac"],
+            path: "Sources/LyricX",
+            exclude: ["Resources/Info.plist", "App/LyricXApp.swift"]
+        ),
         .executableTarget(
             name: "LyricX",
-            dependencies: ["LyricXCore", "LyricXMac"],
-            exclude: ["Resources/Info.plist"]
+            dependencies: ["LyricXApp"],
+            path: "Sources/LyricXExecutable"
         ),
         .executableTarget(
             name: "LyricXUnitTests",
-            dependencies: ["LyricXCore", "LyricXMac"]
+            dependencies: ["LyricXApp", "LyricXCore", "LyricXMac"]
         )
     ]
 )
