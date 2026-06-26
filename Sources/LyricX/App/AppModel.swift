@@ -31,6 +31,7 @@ final class AppModel {
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
     @ObservationIgnored private var artworkTask: Task<Void, Never>?
     @ObservationIgnored private var translationTask: Task<Void, Never>?
+    @ObservationIgnored private var translationRequestID = 0
     @ObservationIgnored private var lastLyricsTrack: PlaybackTrack?
     @ObservationIgnored private var playbackUpdatedAt = Date()
 
@@ -323,6 +324,7 @@ final class AppModel {
             currentLine = nil
             nextLine = nil
             translationTask?.cancel()
+            translationRequestID += 1
             translationTimeline = nil
             translationStatus = .disabled
             artwork = nil
@@ -337,6 +339,7 @@ final class AppModel {
             currentLine = nil
             nextLine = nil
             translationTask?.cancel()
+            translationRequestID += 1
             translationTimeline = nil
             translationStatus = settings.translationEnabled ? .loading : .disabled
             artwork = nil
@@ -379,6 +382,8 @@ final class AppModel {
         } else {
             lyricsStatus = "No synced lyrics for \(track.title)"
             translationTimeline = nil
+            translationTask?.cancel()
+            translationRequestID += 1
             translationStatus = settings.translationEnabled ? .failed("No source lyrics") : .disabled
         }
         updateActiveLines(at: playback.position)
@@ -452,6 +457,7 @@ final class AppModel {
     private func reloadTranslationForCurrentTrack() {
         guard let track = playback.track, let timeline else {
             translationTask?.cancel()
+            translationRequestID += 1
             translationTimeline = nil
             translationStatus = settings.translationEnabled ? .loading : .disabled
             return
@@ -462,8 +468,11 @@ final class AppModel {
 
     private func loadTranslation(for track: PlaybackTrack, sourceTimeline: LyricTimeline) {
         translationTask?.cancel()
+        translationRequestID += 1
+        let requestID = translationRequestID
 
-        guard settings.translationEnabled || settings.japaneseRomajiEnabled else {
+        let translationEnabled = settings.translationEnabled
+        guard translationEnabled || settings.japaneseRomajiEnabled else {
             translationTimeline = nil
             translationStatus = .disabled
             return
@@ -494,20 +503,32 @@ final class AppModel {
                     includeRomaji: includeRomaji
                 )
                 await MainActor.run {
-                    guard self?.playback.track == track, self?.timeline == sourceTimeline else {
+                    guard let self,
+                          self.translationRequestID == requestID,
+                          self.playback.track == track,
+                          self.timeline == sourceTimeline,
+                          self.settings.translationEnabled == translationEnabled,
+                          self.settings.translationTargetLanguage == targetLanguage,
+                          self.settings.japaneseRomajiEnabled == includeRomaji else {
                         return
                     }
-                    self?.translationTimeline = loadedTimeline
-                    self?.translationStatus = .available
+                    self.translationTimeline = loadedTimeline
+                    self.translationStatus = .available
                     cache.store(loadedTimeline, for: track, sourceTimeline: sourceTimeline, includeRomaji: includeRomaji)
                 }
             } catch {
                 await MainActor.run {
-                    guard self?.playback.track == track, self?.timeline == sourceTimeline else {
+                    guard let self,
+                          self.translationRequestID == requestID,
+                          self.playback.track == track,
+                          self.timeline == sourceTimeline,
+                          self.settings.translationEnabled == translationEnabled,
+                          self.settings.translationTargetLanguage == targetLanguage,
+                          self.settings.japaneseRomajiEnabled == includeRomaji else {
                         return
                     }
-                    self?.translationTimeline = nil
-                    self?.translationStatus = .failed(error.localizedDescription)
+                    self.translationTimeline = nil
+                    self.translationStatus = .failed(error.localizedDescription)
                 }
             }
         }

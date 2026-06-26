@@ -67,6 +67,7 @@ struct LyricXUnitTests {
         try testMenuBarDisplayTextFallsBackToOriginalWhenRomajiMissing()
         try testMenuBarDisplayTextKeepsSourceWhenTranslationFailed()
         try await testAppModelKeepsSourceMenuBarTextWhenTranslationFails()
+        try await testAppModelIgnoresStaleTranslationAfterSettingsChange()
         try testMenuBarClickFeedbackStaysVisibleWhilePressed()
         try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
         try testStylePresetCodableRoundTrip()
@@ -651,6 +652,53 @@ struct LyricXUnitTests {
         try expectEqual(model.menuBarPresentation(at: Date()).text, "君が好き")
     }
 
+    @MainActor
+    private static func testAppModelIgnoresStaleTranslationAfterSettingsChange() async throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let sourceTimeline = LyricTimeline(lines: [source])
+        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
+        let requests = ControlledTranslationRequests()
+        let model = AppModel(
+            settingsStore: AppSettingsStore(fileURL: temporaryFileURL(name: "stale-settings.json")),
+            presetStore: LyricStylePresetStore(fileURL: temporaryFileURL(name: "stale-presets.json")),
+            translationService: ControlledLyricTranslationService(requests: requests),
+            translationCache: LyricTranslationCache(directory: temporaryDirectoryURL(name: "stale-translation-cache")),
+            startsPolling: false
+        )
+        model.playback = PlaybackSnapshot(state: .playing, track: track, position: 10.5)
+        model.timeline = sourceTimeline
+        model.translationTargetLanguage = .english
+
+        model.translationEnabled = true
+        try await requests.waitForRequestCount(1)
+        model.translationTargetLanguage = .simplifiedChinese
+        try await requests.waitForRequestCount(2)
+
+        await requests.completeRequest(
+            at: 0,
+            with: LyricTranslationTimeline(
+                targetLanguage: .english,
+                lines: [LyricTranslationLine(sourceLineID: source.id, time: source.time, translatedText: "I love you", romajiText: nil)]
+            )
+        )
+        try await Task.sleep(nanoseconds: 20_000_000)
+
+        try expectNil(model.translationTimeline)
+        try expectEqual(model.translationStatus, .loading)
+
+        await requests.completeRequest(
+            at: 1,
+            with: LyricTranslationTimeline(
+                targetLanguage: .simplifiedChinese,
+                lines: [LyricTranslationLine(sourceLineID: source.id, time: source.time, translatedText: "我喜欢你", romajiText: nil)]
+            )
+        )
+        try await Task.sleep(nanoseconds: 20_000_000)
+
+        try expectEqual(model.translationTimeline?.targetLanguage, .simplifiedChinese)
+        try expectEqual(model.translationStatus, .available)
+    }
+
     private static func testMenuBarClickFeedbackStaysVisibleWhilePressed() throws {
         var feedback = MenuBarClickFeedbackState()
         let pressGeneration = feedback.press()
@@ -879,6 +927,63 @@ private struct FailingLyricTranslationService: LyricTranslationService {
 private struct FailingLyricTranslationError: LocalizedError {
     var errorDescription: String? { "translation unavailable" }
 }
+
+private struct ControlledLyricTranslationService: LyricTranslationService {
+    let requests: ControlledTranslationRequests
+
+    func translationTimeline(
+        for sourceTimeline: LyricTimeline,
+        targetLanguage: TranslationLanguage,
+        includeRomaji: Bool
+    ) async throws -> LyricTranslationTimeline {
+        await requests.append(targetLanguage: targetLanguage, includeRomaji: includeRomaji)
+    }
+}
+
+private actor ControlledTranslationRequests {
+    private struct Request {
+        let targetLanguage: TranslationLanguage
+        let includeRomaji: Bool
+        let continuation: CheckedContinuation<LyricTranslationTimeline, Never>
+    }
+
+    private var requests: [Request] = []
+    private var waiters: [(Int, CheckedContinuation<Void, Never>)] = []
+
+    func append(targetLanguage: TranslationLanguage, includeRomaji: Bool) async -> LyricTranslationTimeline {
+        await withCheckedContinuation { continuation in
+            requests.append(Request(targetLanguage: targetLanguage, includeRomaji: includeRomaji, continuation: continuation))
+            resumeReadyWaiters()
+        }
+    }
+
+    func waitForRequestCount(_ count: Int) async throws {
+        if requests.count >= count {
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            waiters.append((count, continuation))
+        }
+    }
+
+    func completeRequest(at index: Int, with timeline: LyricTranslationTimeline) {
+        requests[index].continuation.resume(returning: timeline)
+    }
+
+    private func resumeReadyWaiters() {
+        var remaining: [(Int, CheckedContinuation<Void, Never>)] = []
+        for waiter in waiters {
+            if requests.count >= waiter.0 {
+                waiter.1.resume()
+            } else {
+                remaining.append(waiter)
+            }
+        }
+        waiters = remaining
+    }
+}
+
 
 private final class ScriptRecorder: @unchecked Sendable {
     private let lock = NSLock()
