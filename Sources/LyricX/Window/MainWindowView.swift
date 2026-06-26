@@ -127,6 +127,13 @@ struct MainWindowView: View {
 
             LyricContextRow(label: "Previous", text: previousLyricText, prominence: .secondary)
             LyricContextRow(label: "Current", text: currentLyricText, prominence: .primary)
+            if let romaji = model.currentTranslationLine?.romajiText {
+                LyricContextRow(label: "Romaji", text: romaji, prominence: .secondary)
+            }
+            if let translation = model.currentTranslationLine?.translatedText {
+                LyricContextRow(label: "Translation", text: translation, prominence: .secondary, lineLimit: 2)
+            }
+            LyricContextRow(label: "Translation Status", text: model.translationStatus.label, prominence: .secondary)
             LyricContextRow(label: "Next", text: model.nextLine?.text ?? "No next line", prominence: .secondary)
         }
         .padding(24)
@@ -208,7 +215,6 @@ struct MainWindowView: View {
         return String(format: "%d:%02d", totalSeconds / 60, totalSeconds % 60)
     }
 }
-
 private struct LyricContextRow: View {
     enum Prominence {
         case primary
@@ -218,6 +224,14 @@ private struct LyricContextRow: View {
     let label: String
     let text: String
     let prominence: Prominence
+    let lineLimit: Int?
+
+    init(label: String, text: String, prominence: Prominence, lineLimit: Int? = nil) {
+        self.label = label
+        self.text = text
+        self.prominence = prominence
+        self.lineLimit = lineLimit
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -228,7 +242,7 @@ private struct LyricContextRow: View {
             Text(text)
                 .font(prominence == .primary ? .title3.weight(.semibold) : .body)
                 .foregroundStyle(prominence == .primary ? .primary : .secondary)
-                .lineLimit(prominence == .primary ? 2 : 1)
+                .lineLimit(lineLimit ?? (prominence == .primary ? 2 : 1))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

@@ -12,7 +12,7 @@ struct MenuBarContentView: View {
     var body: some View {
         nowPlayingPanel
             .padding(12)
-            .frame(width: 320, height: 144)
+            .frame(width: 320, height: 168)
     }
 
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, Bool>) -> Binding<Bool> {
@@ -27,17 +27,18 @@ struct MenuBarContentView: View {
             ArtworkView(
                 artwork: model.artwork,
                 fallbackTitle: model.playback.track?.album ?? "LyricX",
-                size: 120
+                size: 144
             )
 
             VStack(alignment: .leading, spacing: 0) {
                 headerBlock
+                lyricContextBlock
                 Spacer(minLength: 0)
                 playbackToolbar
                 Spacer(minLength: 0)
                 progressBlock
             }
-            .frame(height: 120)
+            .frame(height: 144)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -59,6 +60,34 @@ struct MenuBarContentView: View {
             utilityMenu
         }
     }
+
+    @ViewBuilder
+    private var lyricContextBlock: some View {
+        if let currentLine = model.currentLine {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(currentLine.text)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                if let romaji = model.currentTranslationLine?.romajiText {
+                    Text(romaji)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+
+                if let translation = model.currentTranslationLine?.translatedText {
+                    Text(translation)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
 
 
     private var playbackToolbar: some View {

@@ -95,6 +95,14 @@ final class AppModel {
         }
     }
 
+    var currentTranslationLine: LyricTranslationLine? {
+        guard let currentLine else {
+            return nil
+        }
+        return translationTimeline?.line(for: currentLine)
+    }
+
+
 
     var activeStylePreset: LyricStylePreset {
         stylePresets.first { $0.id == activeStylePresetID } ?? LyricStylePreset.defaults[0]
