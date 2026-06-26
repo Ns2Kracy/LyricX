@@ -43,9 +43,9 @@ struct LyricXUnitTests {
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetDerivesMenuBarStyle()
         try testMenuBarBehaviorUsesPresetWidth()
-        try testMenuBarLayoutCompactsShortTextWithoutAccessory()
+        try testMenuBarLayoutKeepsWidthStableForShortTextWithoutAccessory()
         try testMenuBarLayoutUsesPresetWidthForLongTextWithoutAccessory()
-        try testMenuBarLayoutCompactsShortTextWithAccessory()
+        try testMenuBarLayoutKeepsWidthStableForShortTextWithAccessory()
         try testMenuBarLayoutUsesPresetWidthForLongTextWithAccessory()
         try testMenuBarClickFeedbackStaysVisibleWhilePressed()
         try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
@@ -399,12 +399,12 @@ struct LyricXUnitTests {
         try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: wide, startedAt: startedAt), .staticText)
     }
 
-    private static func testMenuBarLayoutCompactsShortTextWithoutAccessory() throws {
+    private static func testMenuBarLayoutKeepsWidthStableForShortTextWithoutAccessory() throws {
         let layout = MenuBarStatusItemLayout(maxViewportWidth: 220, contentWidth: 120, horizontalPadding: 8, leadingAccessoryWidth: 0)
 
-        try expectEqual(layout.statusItemWidth, 120)
+        try expectEqual(layout.statusItemWidth, 220)
         try expectEqual(layout.textViewportMinX, 0)
-        try expectEqual(layout.textViewportWidth, 120)
+        try expectEqual(layout.textViewportWidth, 220)
     }
 
     private static func testMenuBarLayoutUsesPresetWidthForLongTextWithoutAccessory() throws {
@@ -415,12 +415,12 @@ struct LyricXUnitTests {
         try expectEqual(layout.textViewportWidth, 220)
     }
 
-    private static func testMenuBarLayoutCompactsShortTextWithAccessory() throws {
+    private static func testMenuBarLayoutKeepsWidthStableForShortTextWithAccessory() throws {
         let layout = MenuBarStatusItemLayout(maxViewportWidth: 220, contentWidth: 120, horizontalPadding: 8, leadingAccessoryWidth: 18)
 
-        try expectEqual(layout.statusItemWidth, 154)
+        try expectEqual(layout.statusItemWidth, 254)
         try expectEqual(layout.textViewportMinX, 26)
-        try expectEqual(layout.textViewportWidth, 120)
+        try expectEqual(layout.textViewportWidth, 220)
     }
 
     private static func testMenuBarLayoutUsesPresetWidthForLongTextWithAccessory() throws {

@@ -51,10 +51,10 @@ public struct MenuBarStatusItemLayout: Equatable, Sendable {
 
     public var statusItemWidth: Double {
         guard leadingAccessoryWidth > 0 else {
-            return textViewportWidth
+            return maxViewportWidth
         }
 
-        return horizontalPadding * 2 + leadingAccessoryWidth + textViewportWidth
+        return horizontalPadding * 2 + leadingAccessoryWidth + maxViewportWidth
     }
 
     public var textViewportMinX: Double {
@@ -66,7 +66,7 @@ public struct MenuBarStatusItemLayout: Equatable, Sendable {
     }
 
     public var textViewportWidth: Double {
-        min(contentWidth, maxViewportWidth)
+        maxViewportWidth
     }
 }
 
