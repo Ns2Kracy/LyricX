@@ -31,8 +31,7 @@ struct LyricXUnitTests {
         try testTimelineMarqueeOffsetMovesAtConfiguredSpeed()
         try testTimelineMarqueeOffsetStopsAtEnd()
         try testTimelineMarqueeOffsetStaysZeroWithoutOverflow()
-        try testTimelineMarqueeOffsetPausesAtEndBeforeReset()
-        try testTimelineMarqueeOffsetResetsAfterEndPause()
+        try testTimelineMarqueeOffsetStaysAtEndAfterScrollCompletes()
         try testSpotifyControlScriptForPlayPause()
         try testSpotifyControlScriptForNextTrack()
         try testSpotifyControlScriptForPreviousTrack()
@@ -278,16 +277,10 @@ struct LyricXUnitTests {
         try expectEqual(marquee.offset(elapsedTime: 3.8, contentWidth: 320), -100)
     }
 
-    private static func testTimelineMarqueeOffsetPausesAtEndBeforeReset() throws {
+    private static func testTimelineMarqueeOffsetStaysAtEndAfterScrollCompletes() throws {
         let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
 
-        try expectEqual(marquee.offset(elapsedTime: 4.3, contentWidth: 320), -100)
-    }
-
-    private static func testTimelineMarqueeOffsetResetsAfterEndPause() throws {
-        let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
-
-        try expectEqual(marquee.offset(elapsedTime: 4.7, contentWidth: 320), 0)
+        try expectEqual(marquee.offset(elapsedTime: 10, contentWidth: 320), -100)
     }
 
     private static func testTimelineMarqueeOffsetStaysZeroWithoutOverflow() throws {
