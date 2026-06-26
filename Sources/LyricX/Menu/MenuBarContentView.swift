@@ -12,7 +12,7 @@ struct MenuBarContentView: View {
     var body: some View {
         nowPlayingPanel
             .padding(14)
-            .frame(width: 340, height: 190)
+            .frame(width: 420, height: 190)
     }
 
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, Bool>) -> Binding<Bool> {
@@ -27,7 +27,7 @@ struct MenuBarContentView: View {
             ArtworkView(
                 artwork: model.artwork,
                 fallbackTitle: model.playback.track?.album ?? "LyricX",
-                size: 96
+                size: 162
             )
 
             VStack(alignment: .leading, spacing: 10) {
@@ -37,7 +37,7 @@ struct MenuBarContentView: View {
                 progressBlock
                 playbackToolbar
             }
-            .frame(maxHeight: .infinity, alignment: .top)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -76,47 +76,43 @@ struct MenuBarContentView: View {
     }
 
     private var playbackToolbar: some View {
-        ZStack {
-            HStack(spacing: 0) {
-                Button {
-                    model.previousTrack()
-                } label: {
-                    Label("Previous Track", systemImage: "backward.fill")
-                        .labelStyle(.iconOnly)
-                        .font(.system(size: 15, weight: .medium))
-                }
-                .disabled(!canControlPlayback)
-                .help("Previous Track")
-                .frame(width: elapsedTimeColumnWidth, alignment: .trailing)
-
-                Spacer(minLength: 0)
-
-                Button {
-                    model.nextTrack()
-                } label: {
-                    Label("Next Track", systemImage: "forward.fill")
-                        .labelStyle(.iconOnly)
-                        .font(.system(size: 15, weight: .medium))
-                }
-                .disabled(!canControlPlayback)
-                .help("Next Track")
-                .frame(width: remainingTimeColumnWidth, alignment: .leading)
+        HStack(spacing: 8) {
+            Button {
+                model.previousTrack()
+            } label: {
+                Label("Previous Track", systemImage: "backward.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 15, weight: .medium))
+                    .frame(maxWidth: .infinity, minHeight: 28)
             }
+            .disabled(!canControlPlayback)
+            .help("Previous Track")
 
             Button {
                 model.playPause()
             } label: {
                 Label(playPauseTitle, systemImage: playPauseIcon)
                     .labelStyle(.iconOnly)
-                    .font(.system(size: 21, weight: .semibold))
+                    .font(.system(size: 19, weight: .semibold))
+                    .frame(maxWidth: .infinity, minHeight: 28)
             }
             .disabled(!canControlPlayback)
             .help(playPauseTitle)
-            .frame(width: 32, alignment: .center)
+
+            Button {
+                model.nextTrack()
+            } label: {
+                Label("Next Track", systemImage: "forward.fill")
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 15, weight: .medium))
+                    .frame(maxWidth: .infinity, minHeight: 28)
+            }
+            .disabled(!canControlPlayback)
+            .help("Next Track")
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.borderless)
         .foregroundStyle(.secondary)
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity)
     }
 
     private var progressBlock: some View {
