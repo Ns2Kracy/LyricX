@@ -17,6 +17,9 @@ struct LyricXUnitTests {
         try testTimelineContextReturnsPreviousCurrentAndNextLine()
         try testTranslationTimelineMatchesSourceLineByIDAndTime()
         try testTranslationTimelineRejectsSameIDWithDifferentTime()
+        try testTranslationCacheKeyDiffersByLanguage()
+        try testTranslationCacheSavesAndLoadsTimeline()
+        try testTranslationCacheIgnoresInvalidJSON()
         try testJapaneseRomajiRomanizesKana()
         try testJapaneseRomajiRomanizesSmallTsuAndLongVowelMark()
         try testJapaneseRomajiRomanizesSmallYoonKana()
@@ -194,6 +197,47 @@ struct LyricXUnitTests {
         let timeline = LyricTranslationTimeline(targetLanguage: .english, lines: [shifted])
 
         try expectNil(timeline.line(for: source))
+    }
+
+    private static func testTranslationCacheKeyDiffersByLanguage() throws {
+        let cache = LyricTranslationCache(directory: URL(fileURLWithPath: NSTemporaryDirectory()))
+        let track = PlaybackTrack(title: "Song", artist: "Artist", album: "Album", duration: 120)
+        let timeline = LyricTimeline(lines: [LyricLine(time: 1, text: "Hello")])
+
+        let english = cache.fileURL(for: track, sourceTimeline: timeline, targetLanguage: .english, includeRomaji: false)
+        let chinese = cache.fileURL(for: track, sourceTimeline: timeline, targetLanguage: .simplifiedChinese, includeRomaji: false)
+
+        try expectEqual(english == chinese, false)
+    }
+
+    private static func testTranslationCacheSavesAndLoadsTimeline() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let cache = LyricTranslationCache(directory: directory)
+        let track = PlaybackTrack(title: "Song", artist: "Artist", album: "Album", duration: 120)
+        let sourceTimeline = LyricTimeline(lines: [LyricLine(time: 1, text: "Hello")])
+        let translationTimeline = LyricTranslationTimeline(
+            targetLanguage: .english,
+            lines: [LyricTranslationLine(sourceLineID: sourceTimeline.lines[0].id, time: 1, translatedText: "Hello", romajiText: nil)]
+        )
+
+        cache.store(translationTimeline, for: track, sourceTimeline: sourceTimeline, includeRomaji: false)
+
+        try expectEqual(
+            cache.cachedTimeline(for: track, sourceTimeline: sourceTimeline, targetLanguage: .english, includeRomaji: false),
+            translationTimeline
+        )
+    }
+
+    private static func testTranslationCacheIgnoresInvalidJSON() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let cache = LyricTranslationCache(directory: directory)
+        let track = PlaybackTrack(title: "Song", artist: "Artist", album: "Album", duration: 120)
+        let sourceTimeline = LyricTimeline(lines: [LyricLine(time: 1, text: "Hello")])
+        let fileURL = cache.fileURL(for: track, sourceTimeline: sourceTimeline, targetLanguage: .english, includeRomaji: false)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data("not-json".utf8).write(to: fileURL)
+
+        try expectNil(cache.cachedTimeline(for: track, sourceTimeline: sourceTimeline, targetLanguage: .english, includeRomaji: false))
     }
 
     private static func testJapaneseRomajiRomanizesKana() throws {
