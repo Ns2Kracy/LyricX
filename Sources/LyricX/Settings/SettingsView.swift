@@ -23,6 +23,29 @@ struct SettingsView: View {
                 PresetEditorView(preset: activePresetBinding)
             }
 
+            Section("Translation") {
+                Toggle("Enable lyric translation", isOn: $model.translationEnabled)
+
+                Picker("Target Language", selection: $model.translationTargetLanguage) {
+                    ForEach(TranslationLanguage.allCases) { language in
+                        Text(language.label).tag(language)
+                    }
+                }
+                .disabled(!model.translationEnabled)
+
+                Toggle("Show Japanese romaji", isOn: $model.japaneseRomajiEnabled)
+
+                Picker("Menu Bar Lyrics", selection: $model.menuBarLyricDisplayMode) {
+                    ForEach(MenuBarLyricDisplayMode.allCases) { mode in
+                        Text(mode.label).tag(mode)
+                    }
+                }
+
+                Text(model.translationStatus.label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Menu Bar") {
                 Picker("Animation Frame Rate", selection: $model.menuBarFrameRate) {
                     ForEach(MenuBarAnimationFrameRate.allCases) { frameRate in
