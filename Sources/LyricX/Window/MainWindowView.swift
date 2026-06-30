@@ -4,20 +4,11 @@ import SwiftUI
 @MainActor
 struct MainWindowView: View {
     @Bindable var model: AppModel
+    let openSettings: () -> Void
 
     var body: some View {
-        TabView {
-            nowPlaying
-                .tabItem {
-                    Label("Now Playing", systemImage: "music.note")
-                }
-
-            SettingsView(model: model)
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
-                }
-        }
-        .frame(minWidth: 620, idealWidth: 700, minHeight: 520, idealHeight: 560)
+        nowPlaying
+            .frame(minWidth: 620, idealWidth: 700, minHeight: 520, idealHeight: 560)
     }
 
     private var nowPlaying: some View {
@@ -53,6 +44,16 @@ struct MainWindowView: View {
                     }
                     .controlSize(.small)
                     .help("Refresh Lyrics")
+
+                    Button {
+                        openSettings()
+                    } label: {
+                        Label("Settings", systemImage: "gearshape")
+                            .labelStyle(.iconOnly)
+                    }
+                    .controlSize(.small)
+                    .help("Settings")
+                    .accessibilityLabel("Settings")
                 }
 
                 VStack(alignment: .leading, spacing: 4) {

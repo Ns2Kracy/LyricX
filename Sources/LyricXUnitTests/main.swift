@@ -70,6 +70,7 @@ struct LyricXUnitTests {
         try await testAppModelIgnoresStaleTranslationAfterSettingsChange()
         try testMenuBarClickFeedbackStaysVisibleWhilePressed()
         try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
+        try testMenuBarContextMenuItemsExposeSettingsFirst()
         try testStylePresetCodableRoundTrip()
         try testStylePresetStoreSavesAndLoadsSelection()
         try testAppSettingsDefaultFrameRateIsThirtyFPS()
@@ -871,6 +872,13 @@ struct LyricXUnitTests {
         guard actual == expected else {
             throw TestFailure(message: "Expected \(expected), got \(actual)", file: String(describing: file), line: line)
         }
+    }
+
+    private static func testMenuBarContextMenuItemsExposeSettingsFirst() throws {
+        let items = MenuBarContextMenuItem.allCases
+        try expectEqual(items.map(\.title), ["Settings…", "Show LyricX", "Quit LyricX"])
+        try expectEqual(items.map(\.systemImage), ["gearshape", "rectangle.on.rectangle", "power"])
+        try expectEqual(items.first, .settings)
     }
 
     private static func expectNil<T>(_ actual: T?, file: StaticString = #file, line: UInt = #line) throws {

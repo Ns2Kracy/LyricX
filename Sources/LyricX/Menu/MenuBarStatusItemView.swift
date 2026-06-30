@@ -17,6 +17,7 @@ final class MenuBarStatusItemView: NSControl {
     private var clickReleaseMonitors: [Any] = []
     private var cachedTextKey: AttributedTextKey?
     private var cachedAttributedText: NSAttributedString?
+    var secondaryAction: Selector?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -64,14 +65,14 @@ final class MenuBarStatusItemView: NSControl {
     private func startClickReleaseMonitoring() {
         stopClickReleaseMonitoring()
 
-        let localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
+        let localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp, .rightMouseUp]) { [weak self] event in
             Task { @MainActor [weak self] in
                 self?.endClickFeedback()
             }
             return event
         }
 
-        let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
+        let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp, .rightMouseUp]) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.endClickFeedback()
             }
@@ -108,6 +109,13 @@ final class MenuBarStatusItemView: NSControl {
     override func mouseDown(with event: NSEvent) {
         beginClickFeedback()
         sendAction(action, to: target)
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        beginClickFeedback()
+        if let secondaryAction {
+            sendAction(secondaryAction, to: target)
+        }
     }
 
     override func mouseUp(with event: NSEvent) {

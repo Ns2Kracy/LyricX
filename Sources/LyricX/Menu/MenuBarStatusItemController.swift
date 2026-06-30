@@ -2,10 +2,39 @@ import AppKit
 import LyricXCore
 import SwiftUI
 
+enum MenuBarContextMenuItem: CaseIterable, Equatable {
+    case settings
+    case showLyricX
+    case quit
+
+    var title: String {
+        switch self {
+        case .settings:
+            return "Settings…"
+        case .showLyricX:
+            return "Show LyricX"
+        case .quit:
+            return "Quit LyricX"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .settings:
+            return "gearshape"
+        case .showLyricX:
+            return "rectangle.on.rectangle"
+        case .quit:
+            return "power"
+        }
+    }
+}
+
 @MainActor
 final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     private let model: AppModel
     private let openMainWindow: () -> Void
+    private let openSettings: () -> Void
     private let statusItem: NSStatusItem
     private let statusView = MenuBarStatusItemView(frame: .zero)
     private let popover = NSPopover()
@@ -14,9 +43,14 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     private var lastFrameRate: MenuBarAnimationFrameRate?
     private var lastPresentation: MenuBarPresentation?
 
-    init(model: AppModel, openMainWindow: @escaping () -> Void) {
+    init(
+        model: AppModel,
+        openMainWindow: @escaping () -> Void,
+        openSettings: @escaping () -> Void
+    ) {
         self.model = model
         self.openMainWindow = openMainWindow
+        self.openSettings = openSettings
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
 
@@ -24,6 +58,7 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
 
         statusView.target = self
         statusView.action = #selector(togglePopover(_:))
+        statusView.secondaryAction = #selector(showContextMenu(_:))
         if let button = statusItem.button {
             button.title = ""
             button.image = nil
@@ -60,6 +95,46 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
             startOutsideClickMonitor()
             render(date: Date(), force: true)
         }
+    }
+
+    @objc private func showContextMenu(_ sender: Any?) {
+        popover.performClose(sender)
+
+        let menu = NSMenu()
+        for item in MenuBarContextMenuItem.allCases {
+            menu.addItem(menuItem(for: item))
+        }
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: statusView.bounds.minY), in: statusView)
+    }
+
+    private func menuItem(for item: MenuBarContextMenuItem) -> NSMenuItem {
+        let menuItem = NSMenuItem(title: item.title, action: action(for: item), keyEquivalent: "")
+        menuItem.target = self
+        menuItem.image = NSImage(systemSymbolName: item.systemImage, accessibilityDescription: item.title)
+        return menuItem
+    }
+
+    private func action(for item: MenuBarContextMenuItem) -> Selector {
+        switch item {
+        case .settings:
+            return #selector(openSettingsFromMenu(_:))
+        case .showLyricX:
+            return #selector(openMainWindowFromMenu(_:))
+        case .quit:
+            return #selector(quitFromMenu(_:))
+        }
+    }
+
+    @objc private func openSettingsFromMenu(_ sender: Any?) {
+        openSettings()
+    }
+
+    @objc private func openMainWindowFromMenu(_ sender: Any?) {
+        openMainWindow()
+    }
+
+    @objc private func quitFromMenu(_ sender: Any?) {
+        NSApplication.shared.terminate(sender)
     }
 
     private func closePopoverAndOpenMainWindow() {

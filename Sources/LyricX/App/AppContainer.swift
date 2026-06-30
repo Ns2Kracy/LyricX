@@ -12,8 +12,14 @@ final class AppContainer {
 
         self.model = model
         self.mainWindowController = mainWindowController
-        self.menuBarController = MenuBarStatusItemController(model: model) {
-            mainWindowController.showWindow()
-        }
+        self.menuBarController = MenuBarStatusItemController(
+            model: model,
+            openMainWindow: {
+                mainWindowController.showWindow()
+            },
+            openSettings: {
+                mainWindowController.showSettings()
+            }
+        )
     }
 }
