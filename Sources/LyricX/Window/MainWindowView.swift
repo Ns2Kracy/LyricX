@@ -127,12 +127,15 @@ struct MainWindowView: View {
                 .font(.headline)
 
             LyricContextRow(label: "Previous", text: previousLyricText, prominence: .secondary)
-            LyricContextRow(label: "Current", text: currentLyricText, prominence: .primary)
+            LyricContextRow(
+                label: "Current",
+                text: currentLyricText,
+                prominence: .primary,
+                subtext: model.currentTranslationLine?.translatedText,
+                subtextLineLimit: 2
+            )
             if let romaji = model.currentTranslationLine?.romajiText {
                 LyricContextRow(label: "Romaji", text: romaji, prominence: .secondary)
-            }
-            if let translation = model.currentTranslationLine?.translatedText {
-                LyricContextRow(label: "Translation", text: translation, prominence: .secondary, lineLimit: 2)
             }
             LyricContextRow(label: "Translation Status", text: model.translationStatus.label, prominence: .secondary)
             LyricContextRow(label: "Next", text: model.nextLine?.text ?? "No next line", prominence: .secondary)
@@ -226,12 +229,16 @@ private struct LyricContextRow: View {
     let text: String
     let prominence: Prominence
     let lineLimit: Int?
+    let subtext: String?
+    let subtextLineLimit: Int?
 
-    init(label: String, text: String, prominence: Prominence, lineLimit: Int? = nil) {
+    init(label: String, text: String, prominence: Prominence, lineLimit: Int? = nil, subtext: String? = nil, subtextLineLimit: Int? = nil) {
         self.label = label
         self.text = text
         self.prominence = prominence
         self.lineLimit = lineLimit
+        self.subtext = subtext
+        self.subtextLineLimit = subtextLineLimit
     }
 
     var body: some View {
@@ -245,6 +252,14 @@ private struct LyricContextRow: View {
                 .foregroundStyle(prominence == .primary ? .primary : .secondary)
                 .lineLimit(lineLimit ?? (prominence == .primary ? 2 : 1))
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let subtext {
+                Text(subtext)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(subtextLineLimit ?? 1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 }

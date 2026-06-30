@@ -68,6 +68,7 @@ struct LyricXUnitTests {
         try testMenuBarDisplayTextKeepsSourceWhenTranslationFailed()
         try await testAppModelKeepsSourceMenuBarTextWhenTranslationFails()
         try await testAppModelIgnoresStaleTranslationAfterSettingsChange()
+        try await testAppModelReportsUnavailableTranslationProvider()
         try testMenuBarClickFeedbackStaysVisibleWhilePressed()
         try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
         try testMenuBarContextMenuItemsExposeSettingsFirst()
@@ -698,6 +699,28 @@ struct LyricXUnitTests {
 
         try expectEqual(model.translationTimeline?.targetLanguage, .simplifiedChinese)
         try expectEqual(model.translationStatus, .available)
+    }
+
+    @MainActor
+    private static func testAppModelReportsUnavailableTranslationProvider() async throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let timeline = LyricTimeline(lines: [source])
+        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
+        let model = AppModel(
+            settingsStore: AppSettingsStore(fileURL: temporaryFileURL(name: "unavailable-provider-settings.json")),
+            presetStore: LyricStylePresetStore(fileURL: temporaryFileURL(name: "unavailable-provider-presets.json")),
+            translationService: LocalLyricTranslationService(),
+            translationCache: LyricTranslationCache(directory: temporaryDirectoryURL(name: "unavailable-provider-cache")),
+            startsPolling: false
+        )
+        model.playback = PlaybackSnapshot(state: .playing, track: track, position: 10.5)
+        model.timeline = timeline
+
+        model.translationEnabled = true
+        try await Task.sleep(nanoseconds: 20_000_000)
+
+        try expectEqual(model.translationTimeline?.line(for: source)?.translatedText, nil)
+        try expectEqual(model.translationStatus, .failed("No translation provider configured"))
     }
 
     private static func testMenuBarClickFeedbackStaysVisibleWhilePressed() throws {

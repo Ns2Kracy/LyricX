@@ -496,7 +496,7 @@ final class AppModel {
             includeRomaji: includeRomaji
         ) {
             translationTimeline = cached
-            translationStatus = .available
+            translationStatus = translationStatus(for: cached, translationEnabled: translationEnabled)
             return
         }
 
@@ -521,8 +521,10 @@ final class AppModel {
                         return
                     }
                     self.translationTimeline = loadedTimeline
-                    self.translationStatus = .available
-                    cache.store(loadedTimeline, for: track, sourceTimeline: sourceTimeline, includeRomaji: includeRomaji)
+                    self.translationStatus = self.translationStatus(for: loadedTimeline, translationEnabled: translationEnabled)
+                    if self.translationStatus == .available {
+                        cache.store(loadedTimeline, for: track, sourceTimeline: sourceTimeline, includeRomaji: includeRomaji)
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -540,6 +542,17 @@ final class AppModel {
                 }
             }
         }
+    }
+
+    private func translationStatus(for timeline: LyricTranslationTimeline, translationEnabled: Bool) -> LyricTranslationStatus {
+        guard translationEnabled else {
+            return .available
+        }
+
+        let hasTranslatedText = timeline.lines.contains { line in
+            nonBlank(line.translatedText) != nil
+        }
+        return hasTranslatedText ? .available : .failed("No translation provider configured")
     }
 
     private func updateActivePresetShowsTrackWhenLyricsMissing(_ value: Bool) {
