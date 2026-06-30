@@ -60,9 +60,10 @@ public enum LyricTranslationStatus: Equatable, Sendable {
 
 public protocol LyricTranslationService: Sendable {
     func translationTimeline(
-        for sourceTimeline: LyricTimeline,
+        for track: PlaybackTrack,
+        sourceTimeline: LyricTimeline,
         targetLanguage: TranslationLanguage,
-        includeRomaji: Bool
+        options: LyricTranslationProviderOptions
     ) async throws -> LyricTranslationTimeline
 }
 
@@ -70,9 +71,10 @@ public struct LocalLyricTranslationService: LyricTranslationService {
     public init() {}
 
     public func translationTimeline(
-        for sourceTimeline: LyricTimeline,
+        for track: PlaybackTrack,
+        sourceTimeline: LyricTimeline,
         targetLanguage: TranslationLanguage,
-        includeRomaji: Bool
+        options: LyricTranslationProviderOptions
     ) async throws -> LyricTranslationTimeline {
         LyricTranslationTimeline(
             targetLanguage: targetLanguage,
@@ -81,7 +83,7 @@ public struct LocalLyricTranslationService: LyricTranslationService {
                     sourceLineID: line.id,
                     time: line.time,
                     translatedText: nil,
-                    romajiText: includeRomaji ? JapaneseRomaji.romanizedText(for: line.text) : nil
+                    romajiText: options.includeRomaji ? JapaneseRomaji.romanizedText(for: line.text) : nil
                 )
             }
         )
@@ -218,6 +220,37 @@ public struct LyricTranslationProviderChain: Sendable {
             throw lastError
         }
         return nil
+    }
+}
+
+public struct ProviderChainLyricTranslationService: LyricTranslationService {
+    private let chain: LyricTranslationProviderChain
+
+    public init(providers: [any LyricTranslationProvider] = [OpenAICompatibleLyricTranslationProvider()]) {
+        self.chain = LyricTranslationProviderChain(providers: providers)
+    }
+
+    public func translationTimeline(
+        for track: PlaybackTrack,
+        sourceTimeline: LyricTimeline,
+        targetLanguage: TranslationLanguage,
+        options: LyricTranslationProviderOptions
+    ) async throws -> LyricTranslationTimeline {
+        if let result = try await chain.translation(for: track, sourceTimeline: sourceTimeline, targetLanguage: targetLanguage, options: options) {
+            return result.timeline
+        }
+
+        return LyricTranslationTimeline(
+            targetLanguage: targetLanguage,
+            lines: sourceTimeline.lines.map { line in
+                LyricTranslationLine(
+                    sourceLineID: line.id,
+                    time: line.time,
+                    translatedText: nil,
+                    romajiText: options.includeRomaji ? JapaneseRomaji.romanizedText(for: line.text) : nil
+                )
+            }
+        )
     }
 }
 

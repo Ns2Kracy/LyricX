@@ -112,12 +112,35 @@ struct SettingsView: View {
 
             Toggle("Show Japanese romaji", isOn: $model.japaneseRomajiEnabled)
 
-            LabeledContent("Translation Provider") {
-                Text("Local timing enrichment")
-                    .foregroundStyle(.secondary)
+            Picker("Translation Source", selection: $model.translationSourceMode) {
+                ForEach(TranslationSourceMode.allCases) { mode in
+                    Text(mode.label).tag(mode)
+                }
+            }
+            .disabled(!model.translationEnabled)
+
+            Toggle("NetEase Cloud Music", isOn: $model.netEaseTranslationSourceEnabled)
+                .disabled(true)
+            Toggle("QQ Music", isOn: $model.qqMusicTranslationSourceEnabled)
+                .disabled(true)
+
+            Picker("Machine Provider", selection: $model.machineTranslationProvider) {
+                ForEach(MachineTranslationProvider.allCases) { provider in
+                    Text(provider.label).tag(provider)
+                }
+            }
+            .disabled(!model.translationEnabled)
+
+            if model.machineTranslationProvider == .openAICompatible {
+                TextField("Base URL", text: $model.openAICompatibleBaseURL)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Model", text: $model.openAICompatibleModel)
+                    .textFieldStyle(.roundedBorder)
+                SecureField("API Key", text: $model.openAICompatibleAPIKey)
+                    .textFieldStyle(.roundedBorder)
             }
 
-            Text("Target language and menu-bar behavior are configurable here. Provider selection is not available yet; translation uses the current local service boundary.")
+            Text("NetEase and QQ Music sources are visible for the Chinese-lyrics roadmap but disabled until their APIs are implemented. OpenAI-compatible providers can translate to any configured target language.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

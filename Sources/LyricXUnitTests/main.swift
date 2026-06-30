@@ -69,6 +69,7 @@ struct LyricXUnitTests {
         try await testAppModelKeepsSourceMenuBarTextWhenTranslationFails()
         try await testAppModelIgnoresStaleTranslationAfterSettingsChange()
         try await testAppModelReportsUnavailableTranslationProvider()
+        try await testAppModelUsesConfiguredTranslationProvider()
         try await testProviderChainStopsAtFirstTranslatedResult()
         try await testProviderChainFallsThroughEmptyResult()
         try testOpenAICompatibleProviderParsesTranslationsByID()
@@ -729,6 +730,33 @@ struct LyricXUnitTests {
         try expectEqual(model.translationStatus, .failed("No translation provider configured"))
     }
 
+    @MainActor
+    private static func testAppModelUsesConfiguredTranslationProvider() async throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let timeline = LyricTimeline(lines: [source])
+        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
+        let model = AppModel(
+            settingsStore: AppSettingsStore(fileURL: temporaryFileURL(name: "configured-provider-settings.json")),
+            presetStore: LyricStylePresetStore(fileURL: temporaryFileURL(name: "configured-provider-presets.json")),
+            translationService: ConfiguredLyricTranslationService(translatedText: "I love you"),
+            translationCache: LyricTranslationCache(directory: temporaryDirectoryURL(name: "configured-provider-cache")),
+            startsPolling: false
+        )
+        model.playback = PlaybackSnapshot(state: .playing, track: track, position: 10.5)
+        model.timeline = timeline
+        model.translationSourceMode = .machineTranslationOnly
+        model.machineTranslationProvider = .openAICompatible
+        model.openAICompatibleBaseURL = "https://api.example.test/v1/chat/completions"
+        model.openAICompatibleModel = "translation-model"
+        model.openAICompatibleAPIKey = "test-key"
+
+        model.translationEnabled = true
+        try await Task.sleep(nanoseconds: 20_000_000)
+
+        try expectEqual(model.translationStatus, .available)
+        try expectEqual(model.translationTimeline?.line(for: source)?.translatedText, "I love you")
+    }
+
     private static func testProviderChainStopsAtFirstTranslatedResult() async throws {
         let source = LyricLine(time: 10, text: "君が好き")
         let timeline = LyricTimeline(lines: [source])
@@ -1089,11 +1117,30 @@ struct TestFailure: Error, CustomStringConvertible {
 
 private struct FailingLyricTranslationService: LyricTranslationService {
     func translationTimeline(
-        for sourceTimeline: LyricTimeline,
+        for track: PlaybackTrack,
+        sourceTimeline: LyricTimeline,
         targetLanguage: TranslationLanguage,
-        includeRomaji: Bool
+        options: LyricTranslationProviderOptions
     ) async throws -> LyricTranslationTimeline {
         throw FailingLyricTranslationError()
+    }
+}
+
+private struct ConfiguredLyricTranslationService: LyricTranslationService {
+    let translatedText: String
+
+    func translationTimeline(
+        for track: PlaybackTrack,
+        sourceTimeline: LyricTimeline,
+        targetLanguage: TranslationLanguage,
+        options: LyricTranslationProviderOptions
+    ) async throws -> LyricTranslationTimeline {
+        LyricTranslationTimeline(
+            targetLanguage: targetLanguage,
+            lines: sourceTimeline.lines.map { line in
+                LyricTranslationLine(sourceLineID: line.id, time: line.time, translatedText: translatedText, romajiText: nil)
+            }
+        )
     }
 }
 
@@ -1126,11 +1173,12 @@ private struct ControlledLyricTranslationService: LyricTranslationService {
     let requests: ControlledTranslationRequests
 
     func translationTimeline(
-        for sourceTimeline: LyricTimeline,
+        for track: PlaybackTrack,
+        sourceTimeline: LyricTimeline,
         targetLanguage: TranslationLanguage,
-        includeRomaji: Bool
+        options: LyricTranslationProviderOptions
     ) async throws -> LyricTranslationTimeline {
-        await requests.append(targetLanguage: targetLanguage, includeRomaji: includeRomaji)
+        await requests.append(targetLanguage: targetLanguage, includeRomaji: options.includeRomaji)
     }
 }
 

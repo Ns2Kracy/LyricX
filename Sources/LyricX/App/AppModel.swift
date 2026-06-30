@@ -95,6 +95,69 @@ final class AppModel {
         }
     }
 
+    var translationSourceMode: TranslationSourceMode {
+        get { settings.translationSourceMode }
+        set {
+            settings.translationSourceMode = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var machineTranslationProvider: MachineTranslationProvider {
+        get { settings.machineTranslationProvider }
+        set {
+            settings.machineTranslationProvider = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var openAICompatibleBaseURL: String {
+        get { settings.openAICompatibleBaseURL }
+        set {
+            settings.openAICompatibleBaseURL = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var openAICompatibleModel: String {
+        get { settings.openAICompatibleModel }
+        set {
+            settings.openAICompatibleModel = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var openAICompatibleAPIKey: String {
+        get { settings.openAICompatibleAPIKey }
+        set {
+            settings.openAICompatibleAPIKey = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var netEaseTranslationSourceEnabled: Bool {
+        get { settings.netEaseTranslationSourceEnabled }
+        set {
+            settings.netEaseTranslationSourceEnabled = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
+    var qqMusicTranslationSourceEnabled: Bool {
+        get { settings.qqMusicTranslationSourceEnabled }
+        set {
+            settings.qqMusicTranslationSourceEnabled = newValue
+            persistSettings()
+            reloadTranslationForCurrentTrack()
+        }
+    }
+
     var currentTranslationLine: LyricTranslationLine? {
         guard let currentLine else {
             return nil
@@ -204,7 +267,7 @@ final class AppModel {
             repository: "LyricX",
             currentVersion: AppModel.currentAppVersion()
         ),
-        translationService: any LyricTranslationService = LocalLyricTranslationService(),
+        translationService: any LyricTranslationService = ProviderChainLyricTranslationService(),
         translationCache: LyricTranslationCache = LyricTranslationCache(),
         startsPolling: Bool = true
     ) {
@@ -488,6 +551,16 @@ final class AppModel {
 
         let targetLanguage = settings.translationTargetLanguage
         let includeRomaji = settings.japaneseRomajiEnabled
+        let providerOptions = LyricTranslationProviderOptions(
+            sourceMode: settings.translationSourceMode,
+            machineProvider: settings.machineTranslationProvider,
+            openAICompatibleBaseURL: settings.openAICompatibleBaseURL,
+            openAICompatibleModel: settings.openAICompatibleModel,
+            openAICompatibleAPIKey: settings.openAICompatibleAPIKey,
+            netEaseEnabled: settings.netEaseTranslationSourceEnabled,
+            qqMusicEnabled: settings.qqMusicTranslationSourceEnabled,
+            includeRomaji: includeRomaji
+        )
 
         if let cached = translationCache.cachedTimeline(
             for: track,
@@ -506,9 +579,10 @@ final class AppModel {
         translationTask = Task { [weak self] in
             do {
                 let loadedTimeline = try await service.translationTimeline(
-                    for: sourceTimeline,
+                    for: track,
+                    sourceTimeline: sourceTimeline,
                     targetLanguage: targetLanguage,
-                    includeRomaji: includeRomaji
+                    options: providerOptions
                 )
                 await MainActor.run {
                     guard let self,
