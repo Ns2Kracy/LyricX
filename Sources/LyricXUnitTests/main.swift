@@ -77,6 +77,8 @@ struct LyricXUnitTests {
         try testAppSettingsDefaultFrameRateIsThirtyFPS()
         try testAppSettingsStoreSavesAndLoadsFrameRate()
         try testAppSettingsDecodesTranslationDefaultsFromOldJSON()
+        try testAppSettingsDecodesProviderDefaultsFromOldJSON()
+        try testTranslationProviderSettingsCodableRoundTrip()
         try testMenuBarLyricDisplayModeCodableRoundTrip()
         try testTranslationLanguageCodableRoundTrip()
         try testAppVersionComparisonFindsNewerPatch()
@@ -801,6 +803,45 @@ struct LyricXUnitTests {
         try expectEqual(settings.translationTargetLanguage, .system)
         try expectEqual(settings.japaneseRomajiEnabled, false)
         try expectEqual(settings.menuBarLyricDisplayMode, .original)
+    }
+
+    private static func testAppSettingsDecodesProviderDefaultsFromOldJSON() throws {
+        let data = Data(#"{"showsLyrics":true,"showsTrackWhenLyricsMissing":false,"menuBarFrameRate":15}"#.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        try expectEqual(settings.translationSourceMode, .auto)
+        try expectEqual(settings.machineTranslationProvider, .none)
+        try expectEqual(settings.openAICompatibleBaseURL, "")
+        try expectEqual(settings.openAICompatibleModel, "")
+        try expectEqual(settings.openAICompatibleAPIKey, "")
+        try expectEqual(settings.netEaseTranslationSourceEnabled, false)
+        try expectEqual(settings.qqMusicTranslationSourceEnabled, false)
+    }
+
+    private static func testTranslationProviderSettingsCodableRoundTrip() throws {
+        let settings = AppSettings(
+            translationEnabled: true,
+            translationTargetLanguage: .simplifiedChinese,
+            translationSourceMode: .machineTranslationOnly,
+            machineTranslationProvider: .openAICompatible,
+            openAICompatibleBaseURL: "https://api.example.test/v1/chat/completions",
+            openAICompatibleModel: "translation-model",
+            openAICompatibleAPIKey: "test-key",
+            netEaseTranslationSourceEnabled: true,
+            qqMusicTranslationSourceEnabled: true
+        )
+
+        let data = try JSONEncoder().encode(settings)
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        try expectEqual(decoded.translationSourceMode, .machineTranslationOnly)
+        try expectEqual(decoded.machineTranslationProvider, .openAICompatible)
+        try expectEqual(decoded.openAICompatibleBaseURL, "https://api.example.test/v1/chat/completions")
+        try expectEqual(decoded.openAICompatibleModel, "translation-model")
+        try expectEqual(decoded.openAICompatibleAPIKey, "test-key")
+        try expectEqual(decoded.netEaseTranslationSourceEnabled, true)
+        try expectEqual(decoded.qqMusicTranslationSourceEnabled, true)
     }
 
     private static func testMenuBarLyricDisplayModeCodableRoundTrip() throws {

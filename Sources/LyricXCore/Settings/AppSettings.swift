@@ -50,6 +50,44 @@ public enum MenuBarLyricDisplayMode: String, CaseIterable, Codable, Equatable, I
     }
 }
 
+public enum TranslationSourceMode: String, CaseIterable, Codable, Equatable, Identifiable, Sendable {
+    case auto
+    case existingLyricsOnly
+    case chineseLyricSourcesOnly
+    case machineTranslationOnly
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .auto:
+            return "Auto"
+        case .existingLyricsOnly:
+            return "Existing lyric translations only"
+        case .chineseLyricSourcesOnly:
+            return "Chinese lyric sources only"
+        case .machineTranslationOnly:
+            return "Machine translation only"
+        }
+    }
+}
+
+public enum MachineTranslationProvider: String, CaseIterable, Codable, Equatable, Identifiable, Sendable {
+    case none
+    case openAICompatible
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .none:
+            return "None"
+        case .openAICompatible:
+            return "OpenAI-compatible"
+        }
+    }
+}
+
 public struct AppSettings: Codable, Equatable, Sendable {
     public var showsLyrics: Bool
     public var showsTrackWhenLyricsMissing: Bool
@@ -58,6 +96,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var translationTargetLanguage: TranslationLanguage
     public var japaneseRomajiEnabled: Bool
     public var menuBarLyricDisplayMode: MenuBarLyricDisplayMode
+    public var translationSourceMode: TranslationSourceMode
+    public var machineTranslationProvider: MachineTranslationProvider
+    public var openAICompatibleBaseURL: String
+    public var openAICompatibleModel: String
+    public var openAICompatibleAPIKey: String
+    public var netEaseTranslationSourceEnabled: Bool
+    public var qqMusicTranslationSourceEnabled: Bool
 
     public init(
         showsLyrics: Bool = true,
@@ -66,7 +111,14 @@ public struct AppSettings: Codable, Equatable, Sendable {
         translationEnabled: Bool = false,
         translationTargetLanguage: TranslationLanguage = .system,
         japaneseRomajiEnabled: Bool = false,
-        menuBarLyricDisplayMode: MenuBarLyricDisplayMode = .original
+        menuBarLyricDisplayMode: MenuBarLyricDisplayMode = .original,
+        translationSourceMode: TranslationSourceMode = .auto,
+        machineTranslationProvider: MachineTranslationProvider = .none,
+        openAICompatibleBaseURL: String = "",
+        openAICompatibleModel: String = "",
+        openAICompatibleAPIKey: String = "",
+        netEaseTranslationSourceEnabled: Bool = false,
+        qqMusicTranslationSourceEnabled: Bool = false
     ) {
         self.showsLyrics = showsLyrics
         self.showsTrackWhenLyricsMissing = showsTrackWhenLyricsMissing
@@ -75,6 +127,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.translationTargetLanguage = translationTargetLanguage
         self.japaneseRomajiEnabled = japaneseRomajiEnabled
         self.menuBarLyricDisplayMode = menuBarLyricDisplayMode
+        self.translationSourceMode = translationSourceMode
+        self.machineTranslationProvider = machineTranslationProvider
+        self.openAICompatibleBaseURL = openAICompatibleBaseURL
+        self.openAICompatibleModel = openAICompatibleModel
+        self.openAICompatibleAPIKey = openAICompatibleAPIKey
+        self.netEaseTranslationSourceEnabled = netEaseTranslationSourceEnabled
+        self.qqMusicTranslationSourceEnabled = qqMusicTranslationSourceEnabled
     }
 
     public init(from decoder: Decoder) throws {
@@ -88,6 +147,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         translationTargetLanguage = try container.decodeIfPresent(TranslationLanguage.self, forKey: .translationTargetLanguage) ?? defaults.translationTargetLanguage
         japaneseRomajiEnabled = try container.decodeIfPresent(Bool.self, forKey: .japaneseRomajiEnabled) ?? defaults.japaneseRomajiEnabled
         menuBarLyricDisplayMode = try container.decodeIfPresent(MenuBarLyricDisplayMode.self, forKey: .menuBarLyricDisplayMode) ?? defaults.menuBarLyricDisplayMode
+        translationSourceMode = try container.decodeIfPresent(TranslationSourceMode.self, forKey: .translationSourceMode) ?? defaults.translationSourceMode
+        machineTranslationProvider = try container.decodeIfPresent(MachineTranslationProvider.self, forKey: .machineTranslationProvider) ?? defaults.machineTranslationProvider
+        openAICompatibleBaseURL = try container.decodeIfPresent(String.self, forKey: .openAICompatibleBaseURL) ?? defaults.openAICompatibleBaseURL
+        openAICompatibleModel = try container.decodeIfPresent(String.self, forKey: .openAICompatibleModel) ?? defaults.openAICompatibleModel
+        openAICompatibleAPIKey = try container.decodeIfPresent(String.self, forKey: .openAICompatibleAPIKey) ?? defaults.openAICompatibleAPIKey
+        netEaseTranslationSourceEnabled = try container.decodeIfPresent(Bool.self, forKey: .netEaseTranslationSourceEnabled) ?? defaults.netEaseTranslationSourceEnabled
+        qqMusicTranslationSourceEnabled = try container.decodeIfPresent(Bool.self, forKey: .qqMusicTranslationSourceEnabled) ?? defaults.qqMusicTranslationSourceEnabled
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -98,6 +164,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case translationTargetLanguage
         case japaneseRomajiEnabled
         case menuBarLyricDisplayMode
+        case translationSourceMode
+        case machineTranslationProvider
+        case openAICompatibleBaseURL
+        case openAICompatibleModel
+        case openAICompatibleAPIKey
+        case netEaseTranslationSourceEnabled
+        case qqMusicTranslationSourceEnabled
     }
 }
 
