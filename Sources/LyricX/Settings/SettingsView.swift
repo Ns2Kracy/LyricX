@@ -4,93 +4,174 @@ import SwiftUI
 @MainActor
 struct SettingsView: View {
     @Bindable var model: AppModel
+    @State private var selection: SettingsSection = .lyrics
+
+    private enum SettingsSection: String, CaseIterable, Identifiable {
+        case lyrics
+        case translation
+        case menuBar
+        case player
+        case updates
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .lyrics:
+                return "Lyrics"
+            case .translation:
+                return "Translation"
+            case .menuBar:
+                return "Menu Bar"
+            case .player:
+                return "Player"
+            case .updates:
+                return "Updates"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .lyrics:
+                return "text.quote"
+            case .translation:
+                return "globe"
+            case .menuBar:
+                return "menubar.rectangle"
+            case .player:
+                return "music.note"
+            case .updates:
+                return "arrow.down.circle"
+            }
+        }
+    }
 
     var body: some View {
-        Form {
-            Section("Lyrics") {
-                Picker("Preset", selection: $model.activeStylePresetID) {
-                    ForEach(model.stylePresets) { preset in
-                        Text(preset.name).tag(preset.id)
-                    }
+        NavigationSplitView {
+            List(SettingsSection.allCases, selection: $selection) { section in
+                Label(section.title, systemImage: section.systemImage)
+                    .tag(section)
+            }
+            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
+        } detail: {
+            Form {
+                switch selection {
+                case .lyrics:
+                    lyricsSection
+                case .translation:
+                    translationSection
+                case .menuBar:
+                    menuBarSection
+                case .player:
+                    playerSection
+                case .updates:
+                    updatesSection
                 }
-                .onChange(of: model.activeStylePresetID) { _, newValue in
-                    guard let preset = model.stylePresets.first(where: { $0.id == newValue }) else {
-                        return
-                    }
-                    model.selectPreset(preset)
-                }
+            }
+            .formStyle(.grouped)
+            .padding(20)
+            .navigationTitle(selection.title)
+        }
+        .frame(minWidth: 680, idealWidth: 760, minHeight: 420, idealHeight: 500)
+    }
 
-                PresetEditorView(preset: activePresetBinding)
+    private var lyricsSection: some View {
+        Section("Lyrics") {
+            Picker("Preset", selection: $model.activeStylePresetID) {
+                ForEach(model.stylePresets) { preset in
+                    Text(preset.name).tag(preset.id)
+                }
+            }
+            .onChange(of: model.activeStylePresetID) { _, newValue in
+                guard let preset = model.stylePresets.first(where: { $0.id == newValue }) else {
+                    return
+                }
+                model.selectPreset(preset)
             }
 
-            Section("Translation") {
-                Toggle("Enable lyric translation", isOn: $model.translationEnabled)
+            PresetEditorView(preset: activePresetBinding)
+        }
+    }
 
-                Picker("Target Language", selection: $model.translationTargetLanguage) {
-                    ForEach(TranslationLanguage.allCases) { language in
-                        Text(language.label).tag(language)
-                    }
+    private var translationSection: some View {
+        Section("Translation") {
+            Toggle("Enable lyric translation", isOn: $model.translationEnabled)
+
+            Picker("Target Language", selection: $model.translationTargetLanguage) {
+                ForEach(TranslationLanguage.allCases) { language in
+                    Text(language.label).tag(language)
                 }
-                .disabled(!model.translationEnabled)
+            }
+            .disabled(!model.translationEnabled)
 
-                Toggle("Show Japanese romaji", isOn: $model.japaneseRomajiEnabled)
-
-                Picker("Menu Bar Lyrics", selection: $model.menuBarLyricDisplayMode) {
-                    ForEach(MenuBarLyricDisplayMode.allCases) { mode in
-                        Text(mode.label).tag(mode)
-                    }
+            Picker("Menu Bar Lyrics", selection: $model.menuBarLyricDisplayMode) {
+                ForEach(MenuBarLyricDisplayMode.allCases) { mode in
+                    Text(mode.label).tag(mode)
                 }
+            }
 
-                Text(model.translationStatus.label)
-                    .font(.caption)
+            Toggle("Show Japanese romaji", isOn: $model.japaneseRomajiEnabled)
+
+            LabeledContent("Translation Provider") {
+                Text("Local timing enrichment")
                     .foregroundStyle(.secondary)
             }
 
-            Section("Menu Bar") {
-                Picker("Animation Frame Rate", selection: $model.menuBarFrameRate) {
-                    ForEach(MenuBarAnimationFrameRate.allCases) { frameRate in
-                        Text(frameRate.label).tag(frameRate)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
+            Text("Target language and menu-bar behavior are configurable here. Provider selection is not available yet; translation uses the current local service boundary.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-            Section("Player") {
-                LabeledContent("Music App") {
-                    Label("Spotify", systemImage: "checkmark.circle.fill")
-                }
-
-                disabledPlayerRow("Apple Music")
-                disabledPlayerRow("NetEase Cloud Music")
-                disabledPlayerRow("QQ Music")
-                disabledPlayerRow("Browser Players")
-            }
-
-            Section("Updates") {
-                HStack(spacing: 12) {
-                    Text(model.updateStatus)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Button {
-                        model.checkForUpdates()
-                    } label: {
-                        Label("Check", systemImage: "arrow.down.circle")
-                    }
-
-                    if let pageURL = model.latestUpdate?.pageURL {
-                        Link(destination: pageURL) {
-                            Label("Open Release", systemImage: "safari")
-                        }
-                    }
-                }
-            }
-
+            Text(model.translationStatus.label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .formStyle(.grouped)
-        .padding(20)
-        .frame(minWidth: 560, idealWidth: 620, minHeight: 360, idealHeight: 420)
+    }
+
+    private var menuBarSection: some View {
+        Section("Menu Bar") {
+            Picker("Animation Frame Rate", selection: $model.menuBarFrameRate) {
+                ForEach(MenuBarAnimationFrameRate.allCases) { frameRate in
+                    Text(frameRate.label).tag(frameRate)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private var playerSection: some View {
+        Section("Player") {
+            LabeledContent("Music App") {
+                Label("Spotify", systemImage: "checkmark.circle.fill")
+            }
+
+            disabledPlayerRow("Apple Music")
+            disabledPlayerRow("NetEase Cloud Music")
+            disabledPlayerRow("QQ Music")
+            disabledPlayerRow("Browser Players")
+        }
+    }
+
+    private var updatesSection: some View {
+        Section("Updates") {
+            HStack(spacing: 12) {
+                Text(model.updateStatus)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button {
+                    model.checkForUpdates()
+                } label: {
+                    Label("Check", systemImage: "arrow.down.circle")
+                }
+
+                if let pageURL = model.latestUpdate?.pageURL {
+                    Link(destination: pageURL) {
+                        Label("Open Release", systemImage: "safari")
+                    }
+                }
+            }
+        }
     }
 
     private var activePresetBinding: Binding<LyricStylePreset> {

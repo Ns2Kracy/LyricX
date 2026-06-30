@@ -559,7 +559,7 @@ struct LyricXUnitTests {
         let text = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .original, lineProgress: 0.75)
 
         try expectEqual(text.text, "君が好き")
-        try expectEqual(text.accessibilityText, "君が好き, I love you, kimi ga suki")
+        try expectEqual(text.accessibilityText, "君が好き")
     }
 
     private static func testMenuBarDisplayTextFallsBackWhenTranslationMissing() throws {
@@ -578,7 +578,7 @@ struct LyricXUnitTests {
         let text = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .translation, lineProgress: 0.25)
 
         try expectEqual(text.text, "I love you")
-        try expectEqual(text.accessibilityText, "君が好き, I love you")
+        try expectEqual(text.accessibilityText, "I love you")
     }
 
     private static func testMenuBarDisplayTextAlternatesOriginalThenTranslation() throws {
@@ -590,8 +590,8 @@ struct LyricXUnitTests {
 
         try expectEqual(early.text, "君が好き")
         try expectEqual(late.text, "I love you")
-        try expectEqual(early.accessibilityText, "君が好き, I love you")
-        try expectEqual(late.accessibilityText, "君が好き, I love you")
+        try expectEqual(early.accessibilityText, "君が好き")
+        try expectEqual(late.accessibilityText, "I love you")
     }
 
     private static func testMenuBarDisplayTextAlternatesOriginalThenRomaji() throws {
@@ -603,8 +603,8 @@ struct LyricXUnitTests {
 
         try expectEqual(early.text, "きみ が すき")
         try expectEqual(late.text, "kimi ga suki")
-        try expectEqual(early.accessibilityText, "きみ が すき, kimi ga suki")
-        try expectEqual(late.accessibilityText, "きみ が すき, kimi ga suki")
+        try expectEqual(early.accessibilityText, "きみ が すき")
+        try expectEqual(late.accessibilityText, "kimi ga suki")
     }
 
     private static func testMenuBarDisplayTextFallsBackToOriginalWhenRomajiMissing() throws {

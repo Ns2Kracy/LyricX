@@ -32,17 +32,10 @@ public struct MenuBarLyricDisplayText: Equatable, Sendable {
             selected = useSecondary ? (romaji ?? source) : source
         }
 
-        let accessibilityParts = [source, translation, romaji]
-            .compactMap { $0?.nilIfBlank }
-            .reduce(into: [String]()) { result, value in
-                if !result.contains(value) {
-                    result.append(value)
-                }
-            }
 
         return MenuBarLyricDisplayText(
             text: selected,
-            accessibilityText: accessibilityParts.isEmpty ? selected : accessibilityParts.joined(separator: ", ")
+            accessibilityText: selected
         )
     }
 }
