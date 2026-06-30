@@ -69,6 +69,10 @@ struct LyricXUnitTests {
         try await testAppModelKeepsSourceMenuBarTextWhenTranslationFails()
         try await testAppModelIgnoresStaleTranslationAfterSettingsChange()
         try await testAppModelReportsUnavailableTranslationProvider()
+        try await testProviderChainStopsAtFirstTranslatedResult()
+        try await testProviderChainFallsThroughEmptyResult()
+        try testOpenAICompatibleProviderParsesTranslationsByID()
+        try await testOpenAICompatibleProviderRejectsMissingConfiguration()
         try testMenuBarClickFeedbackStaysVisibleWhilePressed()
         try testMenuBarClickFeedbackIgnoresStaleReleaseTimeout()
         try testMenuBarContextMenuItemsExposeSettingsFirst()
@@ -725,6 +729,103 @@ struct LyricXUnitTests {
         try expectEqual(model.translationStatus, .failed("No translation provider configured"))
     }
 
+    private static func testProviderChainStopsAtFirstTranslatedResult() async throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let timeline = LyricTimeline(lines: [source])
+        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
+        let first = RecordingTranslationProvider(
+            kind: .embeddedLyrics,
+            result: LyricTranslationProviderResult(
+                timeline: LyricTranslationTimeline(
+                    targetLanguage: .english,
+                    lines: [LyricTranslationLine(sourceLineID: source.id, time: source.time, translatedText: "I love you", romajiText: nil)]
+                ),
+                providerKind: .embeddedLyrics,
+                confidence: 1
+            )
+        )
+        let second = RecordingTranslationProvider(kind: .openAICompatible, result: nil)
+        let chain = LyricTranslationProviderChain(providers: [first, second])
+
+        let result = try await chain.translation(for: track, sourceTimeline: timeline, targetLanguage: .english, options: .default)
+
+        try expectEqual(result?.providerKind, .embeddedLyrics)
+        try expectEqual(result?.timeline.line(for: source)?.translatedText, "I love you")
+        try await expectEqual(first.callCount, 1)
+        try await expectEqual(second.callCount, 0)
+    }
+
+    private static func testProviderChainFallsThroughEmptyResult() async throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let timeline = LyricTimeline(lines: [source])
+        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
+        let empty = RecordingTranslationProvider(
+            kind: .embeddedLyrics,
+            result: LyricTranslationProviderResult(
+                timeline: LyricTranslationTimeline(
+                    targetLanguage: .english,
+                    lines: [LyricTranslationLine(sourceLineID: source.id, time: source.time, translatedText: nil, romajiText: nil)]
+                ),
+                providerKind: .embeddedLyrics,
+                confidence: 1
+            )
+        )
+        let fallback = RecordingTranslationProvider(
+            kind: .openAICompatible,
+            result: LyricTranslationProviderResult(
+                timeline: LyricTranslationTimeline(
+                    targetLanguage: .english,
+                    lines: [LyricTranslationLine(sourceLineID: source.id, time: source.time, translatedText: "I love you", romajiText: nil)]
+                ),
+                providerKind: .openAICompatible,
+                confidence: 0.8
+            )
+        )
+        let chain = LyricTranslationProviderChain(providers: [empty, fallback])
+
+        let result = try await chain.translation(for: track, sourceTimeline: timeline, targetLanguage: .english, options: .default)
+
+        try expectEqual(result?.providerKind, .openAICompatible)
+        try expectEqual(result?.timeline.line(for: source)?.translatedText, "I love you")
+        try await expectEqual(empty.callCount, 1)
+        try await expectEqual(fallback.callCount, 1)
+    }
+
+    private static func testOpenAICompatibleProviderParsesTranslationsByID() throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let timeline = LyricTimeline(lines: [source])
+        let data = Data(#"{"translations":[{"id":"\#(source.id)","text":"I love you"}]}"#.utf8)
+
+        let translated = try OpenAICompatibleLyricTranslationProvider.decodeTimeline(
+            from: data,
+            sourceTimeline: timeline,
+            targetLanguage: .english,
+            includeRomaji: true
+        )
+
+        try expectEqual(translated.line(for: source)?.translatedText, "I love you")
+        try expectEqual(translated.line(for: source)?.romajiText, nil)
+    }
+
+    private static func testOpenAICompatibleProviderRejectsMissingConfiguration() async throws {
+        let source = LyricLine(time: 10, text: "君が好き")
+        let timeline = LyricTimeline(lines: [source])
+        let provider = OpenAICompatibleLyricTranslationProvider()
+        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
+
+        do {
+            _ = try await provider.translation(
+                for: track,
+                sourceTimeline: timeline,
+                targetLanguage: .english,
+                options: LyricTranslationProviderOptions(machineProvider: .openAICompatible)
+            )
+            throw TestFailure(message: "Expected missing provider configuration", file: #file, line: #line)
+        } catch let error as LyricTranslationProviderError {
+            try expectEqual(error, .missingConfiguration("OpenAI-compatible translation requires a base URL, model, and API key."))
+        }
+    }
+
     private static func testMenuBarClickFeedbackStaysVisibleWhilePressed() throws {
         var feedback = MenuBarClickFeedbackState()
         let pressGeneration = feedback.press()
@@ -998,6 +1099,27 @@ private struct FailingLyricTranslationService: LyricTranslationService {
 
 private struct FailingLyricTranslationError: LocalizedError {
     var errorDescription: String? { "translation unavailable" }
+}
+
+private actor RecordingTranslationProvider: LyricTranslationProvider {
+    let kind: TranslationProviderKind
+    let result: LyricTranslationProviderResult?
+    private(set) var callCount = 0
+
+    init(kind: TranslationProviderKind, result: LyricTranslationProviderResult?) {
+        self.kind = kind
+        self.result = result
+    }
+
+    func translation(
+        for track: PlaybackTrack,
+        sourceTimeline: LyricTimeline,
+        targetLanguage: TranslationLanguage,
+        options: LyricTranslationProviderOptions
+    ) async throws -> LyricTranslationProviderResult? {
+        callCount += 1
+        return result
+    }
 }
 
 private struct ControlledLyricTranslationService: LyricTranslationService {
