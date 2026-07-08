@@ -14,6 +14,7 @@ struct LyricXUnitTests {
         try testNormalTimestampedLineHasNoSegments()
         try testTimelineReturnsNilBeforeFirstLine()
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
+        try testTimelineCanDelaySwitchWithinLeadTolerance()
         try testTimelineReturnsNextLineAfterPosition()
         try testTimelineContextReturnsPreviousCurrentAndNextLine()
         try testTranslationTimelineMatchesSourceLineByIDAndTime()
@@ -166,6 +167,22 @@ struct LyricXUnitTests {
         try expectEqual(timeline.currentLine(at: 10.0), LyricLine(time: 10.0, text: "First"))
         try expectEqual(timeline.currentLine(at: 19.9), LyricLine(time: 10.0, text: "First"))
         try expectEqual(timeline.currentLine(at: 20.0), LyricLine(time: 20.0, text: "Second"))
+    }
+
+    private static func testTimelineCanDelaySwitchWithinLeadTolerance() throws {
+        let timeline = LyricTimeline(lines: [
+            LyricLine(time: 10.0, text: "First"),
+            LyricLine(time: 20.0, text: "Second")
+        ])
+
+        try expectEqual(
+            timeline.currentLine(at: 20.08, switchLeadTolerance: 0.12),
+            LyricLine(time: 10.0, text: "First")
+        )
+        try expectEqual(
+            timeline.currentLine(at: 20.12, switchLeadTolerance: 0.12),
+            LyricLine(time: 20.0, text: "Second")
+        )
     }
 
     private static func testTimelineReturnsNextLineAfterPosition() throws {

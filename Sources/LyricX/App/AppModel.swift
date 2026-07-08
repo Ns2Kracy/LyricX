@@ -34,6 +34,7 @@ final class AppModel {
     @ObservationIgnored private var translationRequestID = 0
     @ObservationIgnored private var lastLyricsTrack: PlaybackTrack?
     @ObservationIgnored private var playbackUpdatedAt = Date()
+    @ObservationIgnored private let lyricSwitchLeadTolerance: TimeInterval = 0.12
 
     var isLyricsVisible: Bool {
         get { settings.showsLyrics }
@@ -204,7 +205,7 @@ final class AppModel {
         }
 
         let position = estimatedPlaybackPosition(at: date)
-        if let line = timeline?.currentLine(at: position), let lyric = nonBlank(line.text) {
+        if let line = timeline?.currentLine(at: position, switchLeadTolerance: lyricSwitchLeadTolerance), let lyric = nonBlank(line.text) {
             let startedAt = lyricStartedAt(for: line, position: position, date: date)
             let targetDuration = menuBarTargetDuration(for: line)
             let lineProgress = menuBarLineProgress(for: line, position: position)
@@ -249,7 +250,7 @@ final class AppModel {
             return .empty
         }
 
-        return timeline.context(at: estimatedPlaybackPosition(at: date))
+        return timeline.context(at: estimatedPlaybackPosition(at: date), switchLeadTolerance: lyricSwitchLeadTolerance)
     }
 
 
@@ -479,7 +480,7 @@ final class AppModel {
     }
 
     private func updateActiveLines(at position: TimeInterval) {
-        let context = timeline?.context(at: position) ?? .empty
+        let context = timeline?.context(at: position, switchLeadTolerance: lyricSwitchLeadTolerance) ?? .empty
         if currentLine != context.currentLine {
             currentLine = context.currentLine
         }

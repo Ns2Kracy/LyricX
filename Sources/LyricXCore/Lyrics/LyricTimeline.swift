@@ -13,16 +13,18 @@ public struct LyricTimeline: Equatable, Sendable {
         }
     }
 
-    public func currentLine(at position: TimeInterval) -> LyricLine? {
-        lines.last { $0.time <= position }
+    public func currentLine(at position: TimeInterval, switchLeadTolerance: TimeInterval = 0) -> LyricLine? {
+        let effectivePosition = max(0, position - max(0, switchLeadTolerance))
+        return lines.last { $0.time <= effectivePosition }
     }
 
     public func nextLine(after position: TimeInterval) -> LyricLine? {
         lines.first { $0.time > position }
     }
 
-    public func context(at position: TimeInterval) -> LyricTimelineContext {
-        let current = currentLine(at: position)
+    public func context(at position: TimeInterval, switchLeadTolerance: TimeInterval = 0) -> LyricTimelineContext {
+        let current = currentLine(at: position, switchLeadTolerance: switchLeadTolerance)
+        let effectivePosition = max(0, position - max(0, switchLeadTolerance))
         let previous = current.flatMap { current in
             lines.last { $0.time < current.time }
         }
@@ -30,7 +32,7 @@ public struct LyricTimeline: Equatable, Sendable {
         return LyricTimelineContext(
             previousLine: previous,
             currentLine: current,
-            nextLine: nextLine(after: position)
+            nextLine: nextLine(after: effectivePosition)
         )
     }
 }
