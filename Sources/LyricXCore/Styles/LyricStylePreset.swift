@@ -42,7 +42,7 @@ public extension LyricStylePreset {
         LyricStylePreset(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000101")!,
             name: "Menu Bar Compact",
-            menuBarWidth: 220,
+            menuBarWidth: 180,
             fontSize: 13,
             fontWeight: "medium",
             textColorHex: "#FFFFFF",

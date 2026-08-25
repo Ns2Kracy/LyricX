@@ -140,7 +140,10 @@ struct SettingsView: View {
                     .textFieldStyle(.roundedBorder)
             }
 
-            Text("NetEase and QQ Music sources are visible for the Chinese-lyrics roadmap but disabled until their APIs are implemented. OpenAI-compatible providers can translate to any configured target language.")
+            Text(
+                "NetEase and QQ Music sources are visible for the Chinese-lyrics roadmap but disabled until their APIs are implemented. "
+                    + "OpenAI-compatible providers can translate to any configured target language."
+            )
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -158,6 +161,8 @@ struct SettingsView: View {
                 }
             }
             .pickerStyle(.segmented)
+
+            Toggle("Show track artwork", isOn: $model.showsMenuBarArtwork)
         }
     }
 

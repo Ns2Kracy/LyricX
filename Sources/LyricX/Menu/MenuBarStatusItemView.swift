@@ -6,6 +6,8 @@ final class MenuBarStatusItemView: NSControl {
     private let horizontalPadding: CGFloat = 8
     private let iconSize: CGFloat = 14
     private let iconSpacing: CGFloat = 4
+    private let artworkSize: CGFloat = 16
+    private let artworkSpacing: CGFloat = 4
     private var presentation = MenuBarPresentation(
         text: "LyricX",
         accessibilityText: "LyricX",
@@ -17,6 +19,8 @@ final class MenuBarStatusItemView: NSControl {
     private var clickReleaseMonitors: [Any] = []
     private var cachedTextKey: AttributedTextKey?
     private var cachedAttributedText: NSAttributedString?
+    private var cachedArtwork: TrackArtwork?
+    private var cachedArtworkImage: NSImage?
     var secondaryAction: Selector?
 
     override init(frame frameRect: NSRect) {
@@ -33,8 +37,12 @@ final class MenuBarStatusItemView: NSControl {
         NSSize(width: width(for: presentation), height: NSStatusBar.system.thickness)
     }
 
-    func update(presentation: MenuBarPresentation, date: Date) {
+    func update(presentation: MenuBarPresentation, artwork: TrackArtwork?, date: Date) {
         self.presentation = presentation
+        if artwork != cachedArtwork {
+            cachedArtwork = artwork
+            cachedArtworkImage = artwork.flatMap { NSImage(data: $0.data) }
+        }
         self.date = date
         setAccessibilityLabel(presentation.accessibilityText)
         setFrameSize(intrinsicContentSize)
@@ -104,6 +112,7 @@ final class MenuBarStatusItemView: NSControl {
         }
 
         drawText(in: textRect, color: color)
+        drawArtwork(after: textRect)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -138,12 +147,18 @@ final class MenuBarStatusItemView: NSControl {
         )
     }
 
-    private func layout(for presentation: MenuBarPresentation, attributedText: NSAttributedString) -> MenuBarStatusItemLayout {
+    private func layout(
+        for presentation: MenuBarPresentation,
+        attributedText: NSAttributedString
+    ) -> MenuBarStatusItemLayout {
         MenuBarStatusItemLayout(
             maxViewportWidth: presentation.style.viewportWidth,
             contentWidth: contentWidth(for: presentation, attributedText: attributedText),
             horizontalPadding: Double(horizontalPadding),
-            leadingAccessoryWidth: presentation.symbol == nil ? 0 : Double(iconSize + iconSpacing)
+            leadingAccessoryWidth: presentation.symbol == nil ? 0 : Double(iconSize + iconSpacing),
+            trailingAccessoryWidth: cachedArtworkImage == nil
+                ? 0
+                : Double(artworkSpacing + artworkSize)
         )
     }
 
@@ -175,6 +190,30 @@ final class MenuBarStatusItemView: NSControl {
         }
 
         context.restoreGraphicsState()
+    }
+
+    private func drawArtwork(after textRect: NSRect) {
+        guard let cachedArtworkImage else {
+            return
+        }
+
+        let rect = NSRect(
+            x: textRect.maxX + artworkSpacing,
+            y: floor((bounds.height - artworkSize) / 2),
+            width: artworkSize,
+            height: artworkSize
+        )
+        NSGraphicsContext.saveGraphicsState()
+        NSBezierPath(roundedRect: rect, xRadius: 3, yRadius: 3).addClip()
+        cachedArtworkImage.draw(
+            in: rect,
+            from: .zero,
+            operation: .sourceOver,
+            fraction: 1,
+            respectFlipped: true,
+            hints: nil
+        )
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     private func drawSymbol(named name: String, color: NSColor) {

@@ -41,32 +41,32 @@ public struct MenuBarStatusItemLayout: Equatable, Sendable {
     public var contentWidth: Double
     public var horizontalPadding: Double
     public var leadingAccessoryWidth: Double
+    public var trailingAccessoryWidth: Double
 
-    public init(maxViewportWidth: Double, contentWidth: Double, horizontalPadding: Double, leadingAccessoryWidth: Double) {
+    public init(
+        maxViewportWidth: Double,
+        contentWidth: Double,
+        horizontalPadding: Double,
+        leadingAccessoryWidth: Double,
+        trailingAccessoryWidth: Double = 0
+    ) {
         self.maxViewportWidth = max(maxViewportWidth, 1)
         self.contentWidth = max(contentWidth, 1)
         self.horizontalPadding = max(horizontalPadding, 0)
         self.leadingAccessoryWidth = max(leadingAccessoryWidth, 0)
+        self.trailingAccessoryWidth = max(trailingAccessoryWidth, 0)
     }
 
     public var statusItemWidth: Double {
-        guard leadingAccessoryWidth > 0 else {
-            return maxViewportWidth
-        }
-
-        return horizontalPadding * 2 + leadingAccessoryWidth + maxViewportWidth
+        horizontalPadding * 2 + leadingAccessoryWidth + textViewportWidth + trailingAccessoryWidth
     }
 
     public var textViewportMinX: Double {
-        guard leadingAccessoryWidth > 0 else {
-            return 0
-        }
-
-        return horizontalPadding + leadingAccessoryWidth
+        horizontalPadding + leadingAccessoryWidth
     }
 
     public var textViewportWidth: Double {
-        maxViewportWidth
+        min(contentWidth, maxViewportWidth)
     }
 }
 

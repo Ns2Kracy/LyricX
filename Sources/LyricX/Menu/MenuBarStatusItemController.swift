@@ -42,6 +42,7 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     private var outsideClickMonitor: Any?
     private var lastFrameRate: MenuBarAnimationFrameRate?
     private var lastPresentation: MenuBarPresentation?
+    private var lastArtwork: TrackArtwork?
 
     init(
         model: AppModel,
@@ -192,17 +193,19 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
     private func render(date: Date, force: Bool) {
         model.refreshLyricContext(at: date)
         let presentation = model.menuBarPresentation(at: date)
+        let artwork = model.menuBarArtwork
         let needsAnimation = presentation.behavior.isAnimated
-        guard force || needsAnimation || presentation != lastPresentation else {
+        guard force || needsAnimation || presentation != lastPresentation || artwork != lastArtwork else {
             return
         }
 
-        statusView.update(presentation: presentation, date: date)
+        statusView.update(presentation: presentation, artwork: artwork, date: date)
         statusItem.length = statusView.frame.width
         if let button = statusItem.button {
             statusView.frame = button.bounds
         }
         lastPresentation = presentation
+        lastArtwork = artwork
     }
 }
 
