@@ -56,10 +56,9 @@ struct LyricXUnitTests {
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetDerivesMenuBarStyle()
         try testMenuBarBehaviorUsesPresetWidth()
-        try testMenuBarLayoutKeepsWidthStableForShortTextWithoutAccessory()
-        try testMenuBarLayoutUsesPresetWidthForLongTextWithoutAccessory()
-        try testMenuBarLayoutKeepsWidthStableForShortTextWithAccessory()
-        try testMenuBarLayoutUsesPresetWidthForLongTextWithAccessory()
+        try testMenuBarLayoutShrinksForShortTextWithoutAccessory()
+        try testMenuBarLayoutCapsLongTextAtPresetWidth()
+        try testMenuBarLayoutAddsTrailingAccessoryOnlyWhenPresent()
         try testMenuBarDisplayTextUsesOriginalMode()
         try testMenuBarDisplayTextFallsBackWhenTranslationMissing()
         try testMenuBarDisplayTextUsesTranslationMode()
@@ -546,36 +545,46 @@ struct LyricXUnitTests {
         try expectEqual(MenuBarTextBehavior.behavior(contentWidth: 240, style: wide, startedAt: startedAt), .staticText)
     }
 
-    private static func testMenuBarLayoutKeepsWidthStableForShortTextWithoutAccessory() throws {
-        let layout = MenuBarStatusItemLayout(maxViewportWidth: 220, contentWidth: 120, horizontalPadding: 8, leadingAccessoryWidth: 0)
+    private static func testMenuBarLayoutShrinksForShortTextWithoutAccessory() throws {
+        let layout = MenuBarStatusItemLayout(
+            maxViewportWidth: 180,
+            contentWidth: 120,
+            horizontalPadding: 8,
+            leadingAccessoryWidth: 0,
+            trailingAccessoryWidth: 0
+        )
 
-        try expectEqual(layout.statusItemWidth, 220)
-        try expectEqual(layout.textViewportMinX, 0)
-        try expectEqual(layout.textViewportWidth, 220)
+        try expectEqual(layout.statusItemWidth, 136)
+        try expectEqual(layout.textViewportMinX, 8)
+        try expectEqual(layout.textViewportWidth, 120)
     }
 
-    private static func testMenuBarLayoutUsesPresetWidthForLongTextWithoutAccessory() throws {
-        let layout = MenuBarStatusItemLayout(maxViewportWidth: 220, contentWidth: 320, horizontalPadding: 8, leadingAccessoryWidth: 0)
+    private static func testMenuBarLayoutCapsLongTextAtPresetWidth() throws {
+        let layout = MenuBarStatusItemLayout(
+            maxViewportWidth: 180,
+            contentWidth: 320,
+            horizontalPadding: 8,
+            leadingAccessoryWidth: 18,
+            trailingAccessoryWidth: 20
+        )
 
-        try expectEqual(layout.statusItemWidth, 220)
-        try expectEqual(layout.textViewportMinX, 0)
-        try expectEqual(layout.textViewportWidth, 220)
-    }
-
-    private static func testMenuBarLayoutKeepsWidthStableForShortTextWithAccessory() throws {
-        let layout = MenuBarStatusItemLayout(maxViewportWidth: 220, contentWidth: 120, horizontalPadding: 8, leadingAccessoryWidth: 18)
-
-        try expectEqual(layout.statusItemWidth, 254)
+        try expectEqual(layout.statusItemWidth, 234)
         try expectEqual(layout.textViewportMinX, 26)
-        try expectEqual(layout.textViewportWidth, 220)
+        try expectEqual(layout.textViewportWidth, 180)
     }
 
-    private static func testMenuBarLayoutUsesPresetWidthForLongTextWithAccessory() throws {
-        let layout = MenuBarStatusItemLayout(maxViewportWidth: 220, contentWidth: 320, horizontalPadding: 8, leadingAccessoryWidth: 18)
+    private static func testMenuBarLayoutAddsTrailingAccessoryOnlyWhenPresent() throws {
+        let layout = MenuBarStatusItemLayout(
+            maxViewportWidth: 180,
+            contentWidth: 120,
+            horizontalPadding: 8,
+            leadingAccessoryWidth: 0,
+            trailingAccessoryWidth: 20
+        )
 
-        try expectEqual(layout.statusItemWidth, 254)
-        try expectEqual(layout.textViewportMinX, 26)
-        try expectEqual(layout.textViewportWidth, 220)
+        try expectEqual(layout.statusItemWidth, 156)
+        try expectEqual(layout.textViewportMinX, 8)
+        try expectEqual(layout.textViewportWidth, 120)
     }
 
     private static func testMenuBarDisplayTextUsesOriginalMode() throws {
