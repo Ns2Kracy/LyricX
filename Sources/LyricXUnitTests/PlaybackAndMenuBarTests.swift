@@ -120,7 +120,7 @@ extension LyricXUnitTests {
             artwork: TrackArtwork(data: imageData, mimeType: "image/tiff"),
             date: Date()
         )
-        try expectEqual(view.intrinsicContentSize.width, widthWithoutArtwork + 20)
+        try expectEqual(view.intrinsicContentSize.width, widthWithoutArtwork + 16)
 
         view.update(
             presentation: presentation,
@@ -206,6 +206,21 @@ extension LyricXUnitTests {
         )
 
         try expectEqual(layout.statusItemWidth, 156)
+        try expectEqual(layout.textViewportMinX, 8)
+        try expectEqual(layout.textViewportWidth, 120)
+    }
+
+    static func testMenuBarLayoutUsesReducedRightPaddingForArtwork() throws {
+        let layout = MenuBarStatusItemLayout(
+            maxViewportWidth: 180,
+            contentWidth: 120,
+            leadingPadding: 8,
+            trailingPadding: 4,
+            leadingAccessoryWidth: 0,
+            trailingAccessoryWidth: 20
+        )
+
+        try expectEqual(layout.statusItemWidth, 152)
         try expectEqual(layout.textViewportMinX, 8)
         try expectEqual(layout.textViewportWidth, 120)
     }

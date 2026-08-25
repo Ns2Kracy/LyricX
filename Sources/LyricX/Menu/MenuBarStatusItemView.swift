@@ -154,7 +154,8 @@ final class MenuBarStatusItemView: NSControl {
         MenuBarStatusItemLayout(
             maxViewportWidth: presentation.style.viewportWidth,
             contentWidth: contentWidth(for: presentation, attributedText: attributedText),
-            horizontalPadding: Double(horizontalPadding),
+            leadingPadding: Double(horizontalPadding),
+            trailingPadding: cachedArtworkImage == nil ? Double(horizontalPadding) : 4,
             leadingAccessoryWidth: presentation.symbol == nil ? 0 : Double(iconSize + iconSpacing),
             trailingAccessoryWidth: cachedArtworkImage == nil
                 ? 0
@@ -199,7 +200,7 @@ final class MenuBarStatusItemView: NSControl {
 
         let rect = NSRect(
             x: textRect.maxX + artworkSpacing,
-            y: floor((bounds.height - artworkSize) / 2),
+            y: floor(textRect.midY - artworkSize / 2),
             width: artworkSize,
             height: artworkSize
         )

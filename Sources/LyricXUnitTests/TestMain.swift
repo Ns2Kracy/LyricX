@@ -73,6 +73,7 @@ struct LyricXUnitTests {
         try testMenuBarLayoutShrinksForShortTextWithoutAccessory()
         try testMenuBarLayoutCapsLongTextAtPresetWidth()
         try testMenuBarLayoutAddsTrailingAccessoryOnlyWhenPresent()
+        try testMenuBarLayoutUsesReducedRightPaddingForArtwork()
         try testMenuBarDisplayTextUsesOriginalMode()
         try testMenuBarDisplayTextFallsBackWhenTranslationMissing()
         try testMenuBarDisplayTextUsesTranslationMode()
