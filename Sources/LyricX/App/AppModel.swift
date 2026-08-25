@@ -61,6 +61,14 @@ final class AppModel {
         }
     }
 
+    var showsMenuBarArtwork: Bool {
+        get { settings.showsMenuBarArtwork }
+        set {
+            settings.showsMenuBarArtwork = newValue
+            persistSettings()
+        }
+    }
+
     var translationEnabled: Bool {
         get { settings.translationEnabled }
         set {
@@ -659,10 +667,24 @@ final class AppModel {
     private func loadPresetState() {
         let state = (try? presetStore.load()) ?? LyricStylePresetStore.defaultState
         stylePresets = state.presets.isEmpty ? LyricStylePreset.defaults : state.presets
+
+        let compactDefault = LyricStylePreset.defaults[0]
+        let migratedCompactWidth: Bool
+        if let compactIndex = stylePresets.firstIndex(where: { $0.id == compactDefault.id }),
+           stylePresets[compactIndex].menuBarWidth == 220 {
+            stylePresets[compactIndex].menuBarWidth = compactDefault.menuBarWidth
+            migratedCompactWidth = true
+        } else {
+            migratedCompactWidth = false
+        }
+
         activeStylePresetID = stylePresets.contains { $0.id == state.activePresetID }
             ? state.activePresetID
             : stylePresets[0].id
         showsTrackWhenLyricsMissing = activeStylePreset.showsTrackWhenLyricsMissing
+        if migratedCompactWidth {
+            persistPresetState()
+        }
     }
 
     private func persistPresetState() {

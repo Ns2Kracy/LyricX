@@ -80,8 +80,12 @@ struct LyricXUnitTests {
         try testStylePresetCodableRoundTrip()
         try testStylePresetStoreSavesAndLoadsSelection()
         try testAppSettingsDefaultFrameRateIsThirtyFPS()
+        try testAppSettingsDefaultsToShowingMenuBarArtwork()
         try testAppSettingsStoreSavesAndLoadsFrameRate()
+        try testAppSettingsStoreSavesMenuBarArtworkPreference()
+        try testAppSettingsDecodesMenuBarArtworkDefaultFromOldJSON()
         try testAppSettingsDecodesTranslationDefaultsFromOldJSON()
+        try testAppModelMigratesOnlyUntouchedCompactPresetWidth()
         try testAppSettingsDecodesProviderDefaultsFromOldJSON()
         try testTranslationProviderSettingsCodableRoundTrip()
         try testMenuBarLyricDisplayModeCodableRoundTrip()
@@ -515,6 +519,7 @@ struct LyricXUnitTests {
         let presets = LyricStylePreset.defaults
 
         try expectEqual(presets.first?.name, "Menu Bar Compact")
+        try expectEqual(presets.first?.menuBarWidth, 180)
     }
 
     private static func testStylePresetDerivesMenuBarStyle() throws {
@@ -944,6 +949,54 @@ struct LyricXUnitTests {
 
         try? FileManager.default.removeItem(at: url)
         try expectEqual(loaded, settings)
+    }
+
+    private static func testAppSettingsDefaultsToShowingMenuBarArtwork() throws {
+        try expectEqual(AppSettings.default.showsMenuBarArtwork, true)
+    }
+
+    private static func testAppSettingsDecodesMenuBarArtworkDefaultFromOldJSON() throws {
+        let data = Data(#"{"showsLyrics":true,"showsTrackWhenLyricsMissing":false,"menuBarFrameRate":15}"#.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        try expectEqual(settings.showsMenuBarArtwork, true)
+    }
+
+    private static func testAppSettingsStoreSavesMenuBarArtworkPreference() throws {
+        let url = temporaryFileURL(name: "menu-bar-artwork-settings.json")
+        let store = AppSettingsStore(fileURL: url)
+        var settings = AppSettings.default
+        settings.showsMenuBarArtwork = false
+
+        try store.save(settings)
+        let loaded = try store.load()
+
+        try? FileManager.default.removeItem(at: url)
+        try expectEqual(loaded.showsMenuBarArtwork, false)
+    }
+
+    @MainActor
+    private static func testAppModelMigratesOnlyUntouchedCompactPresetWidth() throws {
+        let presetURL = temporaryFileURL(name: "compact-preset-migration.json")
+        let settingsURL = temporaryFileURL(name: "compact-preset-migration-settings.json")
+        var oldCompact = LyricStylePreset.defaults[0]
+        oldCompact.menuBarWidth = 220
+        var customizedWide = LyricStylePreset.defaults[1]
+        customizedWide.menuBarWidth = 280
+        let store = LyricStylePresetStore(fileURL: presetURL)
+        try store.save(presets: [oldCompact, customizedWide], activePresetID: oldCompact.id)
+
+        let model = AppModel(
+            settingsStore: AppSettingsStore(fileURL: settingsURL),
+            presetStore: store,
+            startsPolling: false
+        )
+
+        try? FileManager.default.removeItem(at: presetURL)
+        try? FileManager.default.removeItem(at: settingsURL)
+        try expectEqual(model.stylePresets[0].menuBarWidth, 180)
+        try expectEqual(model.stylePresets[1].menuBarWidth, 280)
     }
 
     private static func testAppSettingsDecodesTranslationDefaultsFromOldJSON() throws {
