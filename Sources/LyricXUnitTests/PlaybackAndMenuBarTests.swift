@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import LyricXCore
 import LyricXMac
@@ -93,6 +94,43 @@ extension LyricXUnitTests {
 
         model.showsMenuBarArtwork = false
         try expectNil(model.menuBarArtwork)
+    }
+
+    @MainActor
+    static func testMenuBarStatusItemArtworkOccupiesSpaceOnlyWhenDrawable() throws {
+        let view = MenuBarStatusItemView(frame: .zero)
+        let presentation = MenuBarPresentation(
+            text: "Test",
+            accessibilityText: "Test",
+            symbol: nil,
+            behavior: .staticText
+        )
+
+        view.update(presentation: presentation, artwork: nil, date: Date())
+        let widthWithoutArtwork = view.intrinsicContentSize.width
+
+        let image = NSImage(size: NSSize(width: 2, height: 2))
+        image.lockFocus()
+        NSColor.red.setFill()
+        NSRect(x: 0, y: 0, width: 2, height: 2).fill()
+        image.unlockFocus()
+        let imageData = try require(image.tiffRepresentation, "Test image should encode")
+        view.update(
+            presentation: presentation,
+            artwork: TrackArtwork(data: imageData, mimeType: "image/tiff"),
+            date: Date()
+        )
+        try expectEqual(view.intrinsicContentSize.width, widthWithoutArtwork + 20)
+
+        view.update(
+            presentation: presentation,
+            artwork: TrackArtwork(
+                data: Data([0x01]),
+                mimeType: "application/octet-stream"
+            ),
+            date: Date()
+        )
+        try expectEqual(view.intrinsicContentSize.width, widthWithoutArtwork)
     }
 
     static func testDefaultStylePresetsIncludeMenuBarCompact() throws {

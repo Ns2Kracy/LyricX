@@ -66,6 +66,7 @@ struct LyricXUnitTests {
         try await testSpotifyArtworkProviderLoadsArtworkData()
         try testTrackArtworkStoresPNGData()
         try testAppModelSelectsMenuBarArtworkOnlyWhenEnabled()
+        try testMenuBarStatusItemArtworkOccupiesSpaceOnlyWhenDrawable()
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetDerivesMenuBarStyle()
         try testMenuBarBehaviorUsesPresetWidth()
