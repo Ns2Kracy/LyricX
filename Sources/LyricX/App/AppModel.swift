@@ -180,6 +180,10 @@ final class AppModel {
         stylePresets.first { $0.id == activeStylePresetID } ?? LyricStylePreset.defaults[0]
     }
 
+    var menuBarArtwork: TrackArtwork? {
+        showsMenuBarArtwork ? artwork : nil
+    }
+
     var menuBarSymbol: String {
         playback.isPlaying ? "music.note" : "music.note.list"
     }
