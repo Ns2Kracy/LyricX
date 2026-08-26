@@ -97,6 +97,32 @@ extension LyricXUnitTests {
     }
 
     @MainActor
+    static func testAppModelSwitchesLyricWhenNextLineStarts() throws {
+        let model = AppModel(
+            settingsStore: AppSettingsStore(
+                fileURL: temporaryFileURL(name: "lyric-switch-boundary-settings.json")
+            ),
+            presetStore: LyricStylePresetStore(
+                fileURL: temporaryFileURL(name: "lyric-switch-boundary-presets.json")
+            ),
+            startsPolling: false
+        )
+        let first = LyricLine(time: 10, text: "First")
+        let second = LyricLine(time: 20, text: "Second")
+        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
+        model.timeline = LyricTimeline(lines: [first, second])
+
+        // The next line's timestamp is the exact switch boundary for every lyric surface.
+        model.playback = PlaybackSnapshot(state: .paused, track: track, position: second.time - 0.001)
+        try expectEqual(model.lyricContext().currentLine, first)
+        try expectEqual(model.menuBarPresentation().text, first.text)
+
+        model.playback = PlaybackSnapshot(state: .paused, track: track, position: second.time)
+        try expectEqual(model.lyricContext().currentLine, second)
+        try expectEqual(model.menuBarPresentation().text, second.text)
+    }
+
+    @MainActor
     static func testMenuBarStatusItemArtworkOccupiesSpaceOnlyWhenDrawable() throws {
         let view = MenuBarStatusItemView(frame: .zero)
         let presentation = MenuBarPresentation(

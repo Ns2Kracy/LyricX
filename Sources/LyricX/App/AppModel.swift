@@ -5,6 +5,7 @@ import Observation
 
 @MainActor
 @Observable
+// pi-lens-ignore: type_body_length
 final class AppModel {
     var settings = AppSettings.default
     var playback = PlaybackSnapshot(state: .notRunning, message: "Waiting for Spotify")
@@ -34,7 +35,6 @@ final class AppModel {
     @ObservationIgnored private var translationRequestID = 0
     @ObservationIgnored private var lastLyricsTrack: PlaybackTrack?
     @ObservationIgnored private var playbackUpdatedAt = Date()
-    @ObservationIgnored private let lyricSwitchLeadTolerance: TimeInterval = 0.12
 
     var isLyricsVisible: Bool {
         get { settings.showsLyrics }
@@ -217,7 +217,7 @@ final class AppModel {
         }
 
         let position = estimatedPlaybackPosition(at: date)
-        if let line = timeline?.currentLine(at: position, switchLeadTolerance: lyricSwitchLeadTolerance), let lyric = nonBlank(line.text) {
+        if let line = activeLyricContext(at: position).currentLine, let lyric = nonBlank(line.text) {
             let startedAt = lyricStartedAt(for: line, position: position, date: date)
             let targetDuration = menuBarTargetDuration(for: line)
             let lineProgress = menuBarLineProgress(for: line, position: position)
@@ -258,11 +258,11 @@ final class AppModel {
     }
 
     func lyricContext(at date: Date = Date()) -> LyricTimelineContext {
-        guard let timeline else {
+        guard timeline != nil else {
             return .empty
         }
 
-        return timeline.context(at: estimatedPlaybackPosition(at: date), switchLeadTolerance: lyricSwitchLeadTolerance)
+        return activeLyricContext(at: estimatedPlaybackPosition(at: date))
     }
 
 
@@ -491,8 +491,13 @@ final class AppModel {
         }
     }
 
+    private func activeLyricContext(at position: TimeInterval) -> LyricTimelineContext {
+        // A line becomes current exactly at its timestamp; do not offset the playback position.
+        timeline?.context(at: position) ?? .empty
+    }
+
     private func updateActiveLines(at position: TimeInterval) {
-        let context = timeline?.context(at: position, switchLeadTolerance: lyricSwitchLeadTolerance) ?? .empty
+        let context = activeLyricContext(at: position)
         if currentLine != context.currentLine {
             currentLine = context.currentLine
         }
