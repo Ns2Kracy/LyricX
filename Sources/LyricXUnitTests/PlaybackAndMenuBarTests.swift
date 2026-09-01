@@ -159,6 +159,23 @@ extension LyricXUnitTests {
         try expectEqual(view.intrinsicContentSize.width, widthWithoutArtwork)
     }
 
+    @MainActor
+    static func testMenuBarStatusItemUpdatePreservesHostManagedFrame() throws {
+        let view = MenuBarStatusItemView(frame: .zero)
+        view.setFrameSize(NSSize(width: 100, height: NSStatusBar.system.thickness))
+        let presentation = MenuBarPresentation(
+            text: "A much longer lyric line",
+            accessibilityText: "A much longer lyric line",
+            symbol: nil,
+            behavior: .staticText
+        )
+
+        view.update(presentation: presentation, artwork: nil, date: Date())
+
+        // NSStatusItem owns the view frame; update only changes its intrinsic size.
+        try expectEqual(view.frame.width, 100)
+    }
+
     static func testDefaultStylePresetsIncludeMenuBarCompact() throws {
         let presets = LyricStylePreset.defaults
 

@@ -45,7 +45,7 @@ final class MenuBarStatusItemView: NSControl {
         }
         self.date = date
         setAccessibilityLabel(presentation.accessibilityText)
-        setFrameSize(intrinsicContentSize)
+        invalidateIntrinsicContentSize()
         needsDisplay = true
     }
 

@@ -68,6 +68,7 @@ struct LyricXUnitTests {
         try testAppModelSelectsMenuBarArtworkOnlyWhenEnabled()
         try testAppModelSwitchesLyricWhenNextLineStarts()
         try testMenuBarStatusItemArtworkOccupiesSpaceOnlyWhenDrawable()
+        try testMenuBarStatusItemUpdatePreservesHostManagedFrame()
         try testDefaultStylePresetsIncludeMenuBarCompact()
         try testStylePresetDerivesMenuBarStyle()
         try testMenuBarBehaviorUsesPresetWidth()
