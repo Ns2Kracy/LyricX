@@ -124,26 +124,7 @@ struct SettingsView: View {
             Toggle("QQ Music", isOn: $model.qqMusicTranslationSourceEnabled)
                 .disabled(true)
 
-            Picker("Machine Provider", selection: $model.machineTranslationProvider) {
-                ForEach(MachineTranslationProvider.allCases) { provider in
-                    Text(provider.label).tag(provider)
-                }
-            }
-            .disabled(!model.translationEnabled)
-
-            if model.machineTranslationProvider == .openAICompatible {
-                TextField("Base URL", text: $model.openAICompatibleBaseURL)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Model", text: $model.openAICompatibleModel)
-                    .textFieldStyle(.roundedBorder)
-                SecureField("API Key", text: $model.openAICompatibleAPIKey)
-                    .textFieldStyle(.roundedBorder)
-            }
-
-            Text(
-                "NetEase and QQ Music sources are visible for the Chinese-lyrics roadmap but disabled until their APIs are implemented. "
-                    + "OpenAI-compatible providers can translate to any configured target language."
-            )
+            Text("NetEase and QQ Music sources are visible for the Chinese-lyrics roadmap but disabled until their APIs are implemented.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

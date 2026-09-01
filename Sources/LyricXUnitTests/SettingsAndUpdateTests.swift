@@ -132,29 +132,29 @@ extension LyricXUnitTests {
         try expectEqual(settings.menuBarLyricDisplayMode, .original)
     }
 
+    static func testAppSettingsMigratesRemovedMachineTranslationMode() throws {
+        let data = Data(#"{"translationSourceMode":"machineTranslationOnly"}"#.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        try expectEqual(settings.translationSourceMode, .auto)
+    }
+
     static func testAppSettingsDecodesProviderDefaultsFromOldJSON() throws {
         let data = Data(#"{"showsLyrics":true,"showsTrackWhenLyricsMissing":false,"menuBarFrameRate":15}"#.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
         try expectEqual(settings.translationSourceMode, .auto)
-        try expectEqual(settings.machineTranslationProvider, .none)
-        try expectEqual(settings.openAICompatibleBaseURL, "")
-        try expectEqual(settings.openAICompatibleModel, "")
-        try expectEqual(settings.openAICompatibleAPIKey, "")
         try expectEqual(settings.netEaseTranslationSourceEnabled, false)
         try expectEqual(settings.qqMusicTranslationSourceEnabled, false)
     }
 
-    static func testTranslationProviderSettingsCodableRoundTrip() throws {
+    static func testTranslationSourceSettingsCodableRoundTrip() throws {
         let settings = AppSettings(
             translationEnabled: true,
             translationTargetLanguage: .simplifiedChinese,
-            translationSourceMode: .machineTranslationOnly,
-            machineTranslationProvider: .openAICompatible,
-            openAICompatibleBaseURL: "https://api.example.test/v1/chat/completions",
-            openAICompatibleModel: "translation-model",
-            openAICompatibleAPIKey: "test-key",
+            translationSourceMode: .chineseLyricSourcesOnly,
             netEaseTranslationSourceEnabled: true,
             qqMusicTranslationSourceEnabled: true
         )
@@ -162,11 +162,7 @@ extension LyricXUnitTests {
         let data = try JSONEncoder().encode(settings)
         let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
 
-        try expectEqual(decoded.translationSourceMode, .machineTranslationOnly)
-        try expectEqual(decoded.machineTranslationProvider, .openAICompatible)
-        try expectEqual(decoded.openAICompatibleBaseURL, "https://api.example.test/v1/chat/completions")
-        try expectEqual(decoded.openAICompatibleModel, "translation-model")
-        try expectEqual(decoded.openAICompatibleAPIKey, "test-key")
+        try expectEqual(decoded.translationSourceMode, .chineseLyricSourcesOnly)
         try expectEqual(decoded.netEaseTranslationSourceEnabled, true)
         try expectEqual(decoded.qqMusicTranslationSourceEnabled, true)
     }

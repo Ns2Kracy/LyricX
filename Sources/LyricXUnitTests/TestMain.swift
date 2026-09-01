@@ -92,8 +92,6 @@ struct LyricXUnitTests {
         try await testAppModelUsesConfiguredTranslationProvider()
         try await testProviderChainStopsAtFirstTranslatedResult()
         try await testProviderChainFallsThroughEmptyResult()
-        try testOpenAICompatibleProviderParsesTranslationsByID()
-        try await testOpenAICompatibleProviderRejectsMissingConfiguration()
     }
 
     @MainActor
@@ -109,9 +107,10 @@ struct LyricXUnitTests {
         try testAppSettingsStoreSavesMenuBarArtworkPreference()
         try testAppSettingsDecodesMenuBarArtworkDefaultFromOldJSON()
         try testAppSettingsDecodesTranslationDefaultsFromOldJSON()
+        try testAppSettingsMigratesRemovedMachineTranslationMode()
         try testAppModelMigratesOnlyUntouchedCompactPresetWidth()
         try testAppSettingsDecodesProviderDefaultsFromOldJSON()
-        try testTranslationProviderSettingsCodableRoundTrip()
+        try testTranslationSourceSettingsCodableRoundTrip()
         try testMenuBarLyricDisplayModeCodableRoundTrip()
         try testTranslationLanguageCodableRoundTrip()
         try testAppVersionComparisonFindsNewerPatch()

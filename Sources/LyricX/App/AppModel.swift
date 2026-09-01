@@ -113,42 +113,6 @@ final class AppModel {
         }
     }
 
-    var machineTranslationProvider: MachineTranslationProvider {
-        get { settings.machineTranslationProvider }
-        set {
-            settings.machineTranslationProvider = newValue
-            persistSettings()
-            reloadTranslationForCurrentTrack()
-        }
-    }
-
-    var openAICompatibleBaseURL: String {
-        get { settings.openAICompatibleBaseURL }
-        set {
-            settings.openAICompatibleBaseURL = newValue
-            persistSettings()
-            reloadTranslationForCurrentTrack()
-        }
-    }
-
-    var openAICompatibleModel: String {
-        get { settings.openAICompatibleModel }
-        set {
-            settings.openAICompatibleModel = newValue
-            persistSettings()
-            reloadTranslationForCurrentTrack()
-        }
-    }
-
-    var openAICompatibleAPIKey: String {
-        get { settings.openAICompatibleAPIKey }
-        set {
-            settings.openAICompatibleAPIKey = newValue
-            persistSettings()
-            reloadTranslationForCurrentTrack()
-        }
-    }
-
     var netEaseTranslationSourceEnabled: Bool {
         get { settings.netEaseTranslationSourceEnabled }
         set {
@@ -571,10 +535,6 @@ final class AppModel {
         let includeRomaji = settings.japaneseRomajiEnabled
         let providerOptions = LyricTranslationProviderOptions(
             sourceMode: settings.translationSourceMode,
-            machineProvider: settings.machineTranslationProvider,
-            openAICompatibleBaseURL: settings.openAICompatibleBaseURL,
-            openAICompatibleModel: settings.openAICompatibleModel,
-            openAICompatibleAPIKey: settings.openAICompatibleAPIKey,
             netEaseEnabled: settings.netEaseTranslationSourceEnabled,
             qqMusicEnabled: settings.qqMusicTranslationSourceEnabled,
             includeRomaji: includeRomaji

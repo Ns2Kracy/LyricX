@@ -110,12 +110,6 @@ extension LyricXUnitTests {
         )
         model.playback = PlaybackSnapshot(state: .playing, track: track, position: 10.5)
         model.timeline = timeline
-        model.translationSourceMode = .machineTranslationOnly
-        model.machineTranslationProvider = .openAICompatible
-        model.openAICompatibleBaseURL = "https://api.example.test/v1/chat/completions"
-        model.openAICompatibleModel = "translation-model"
-        model.openAICompatibleAPIKey = "test-key"
-
         model.translationEnabled = true
         try await Task.sleep(nanoseconds: 20_000_000)
 
@@ -138,7 +132,7 @@ extension LyricXUnitTests {
                 confidence: 1
             )
         )
-        let second = RecordingTranslationProvider(kind: .openAICompatible, result: nil)
+        let second = RecordingTranslationProvider(kind: .qqMusic, result: nil)
         let chain = LyricTranslationProviderChain(providers: [first, second])
 
         let result = try await chain.translation(for: track, sourceTimeline: timeline, targetLanguage: .english, options: .default)
@@ -165,13 +159,13 @@ extension LyricXUnitTests {
             )
         )
         let fallback = RecordingTranslationProvider(
-            kind: .openAICompatible,
+            kind: .netEaseCloudMusic,
             result: LyricTranslationProviderResult(
                 timeline: LyricTranslationTimeline(
                     targetLanguage: .english,
                     lines: [LyricTranslationLine(sourceLineID: source.id, time: source.time, translatedText: "I love you", romajiText: nil)]
                 ),
-                providerKind: .openAICompatible,
+                providerKind: .netEaseCloudMusic,
                 confidence: 0.8
             )
         )
@@ -179,45 +173,10 @@ extension LyricXUnitTests {
 
         let result = try await chain.translation(for: track, sourceTimeline: timeline, targetLanguage: .english, options: .default)
 
-        try expectEqual(result?.providerKind, .openAICompatible)
+        try expectEqual(result?.providerKind, .netEaseCloudMusic)
         try expectEqual(result?.timeline.line(for: source)?.translatedText, "I love you")
         try await expectEqual(empty.callCount, 1)
         try await expectEqual(fallback.callCount, 1)
-    }
-
-    static func testOpenAICompatibleProviderParsesTranslationsByID() throws {
-        let source = LyricLine(time: 10, text: "君が好き")
-        let timeline = LyricTimeline(lines: [source])
-        let data = Data(#"{"translations":[{"id":"\#(source.id)","text":"I love you"}]}"#.utf8)
-
-        let translated = try OpenAICompatibleLyricTranslationProvider.decodeTimeline(
-            from: data,
-            sourceTimeline: timeline,
-            targetLanguage: .english,
-            includeRomaji: true
-        )
-
-        try expectEqual(translated.line(for: source)?.translatedText, "I love you")
-        try expectEqual(translated.line(for: source)?.romajiText, nil)
-    }
-
-    static func testOpenAICompatibleProviderRejectsMissingConfiguration() async throws {
-        let source = LyricLine(time: 10, text: "君が好き")
-        let timeline = LyricTimeline(lines: [source])
-        let provider = OpenAICompatibleLyricTranslationProvider()
-        let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
-
-        do {
-            _ = try await provider.translation(
-                for: track,
-                sourceTimeline: timeline,
-                targetLanguage: .english,
-                options: LyricTranslationProviderOptions(machineProvider: .openAICompatible)
-            )
-            throw TestFailure(message: "Expected missing provider configuration", file: #file, line: #line)
-        } catch let error as LyricTranslationProviderError {
-            try expectEqual(error, .missingConfiguration("OpenAI-compatible translation requires a base URL, model, and API key."))
-        }
     }
 
 
