@@ -164,7 +164,19 @@ struct SettingsView: View {
                 LabeledContent("Active Device", value: deviceName)
             }
 
+            if model.spotifyConnectionStatus.isConnected {
+                LabeledContent("LyricX Player") {
+                    Label(model.spotifyWebPlaybackStatus.title, systemImage: "waveform.circle")
+                }
+            }
+
             if let detail = model.spotifyConnectionStatus.detail ?? model.spotifyPlaybackStatus {
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let detail = model.spotifyWebPlaybackStatus.detail {
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -173,6 +185,11 @@ struct SettingsView: View {
             HStack {
                 Spacer()
                 if model.spotifyConnectionStatus.isConnected {
+                    Button(model.spotifyWebPlaybackActionTitle) {
+                        model.listenInLyricX()
+                    }
+                    .disabled(!model.canRequestLyricXPlayback)
+
                     Button("Disconnect", role: .destructive) {
                         model.disconnectSpotify()
                     }
@@ -184,7 +201,7 @@ struct SettingsView: View {
                 }
             }
 
-            Text("Spotify Development Mode currently allows only accounts added to the app allowlist.")
+            Text("In-app playback requires Spotify Premium. Development Mode currently allows only accounts added to the app allowlist.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

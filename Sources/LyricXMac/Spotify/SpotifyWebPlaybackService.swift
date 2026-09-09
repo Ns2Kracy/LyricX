@@ -14,6 +14,28 @@ public enum SpotifyWebPlaybackStatus: Equatable, Sendable {
         }
         return deviceID
     }
+
+    public var title: String {
+        switch self {
+        case .idle:
+            return "Not started"
+        case .loading:
+            return "Starting..."
+        case .ready:
+            return "Ready"
+        case .offline:
+            return "Offline"
+        case .failed:
+            return "Unavailable"
+        }
+    }
+
+    public var detail: String? {
+        guard case .failed(let message) = self else {
+            return nil
+        }
+        return message
+    }
 }
 
 public struct SpotifyWebPlaybackTrack: Equatable, Sendable {
@@ -96,7 +118,15 @@ public final class SpotifyWebPlaybackService: NSObject {
             status = .loading
             playerView.loadHTMLString(Self.playerHTML, baseURL: URL(string: "https://sdk.scdn.co"))
         case .offline:
-            Task { try? await command("connect") }
+            status = .loading
+            Task { [weak self] in
+                do {
+                    try await self?.command("connect")
+                } catch {
+                    self?.status = .failed(error.localizedDescription)
+                    self?.onEvent?(.failed(error.localizedDescription))
+                }
+            }
         case .loading, .ready:
             break
         }
@@ -180,6 +210,9 @@ public final class SpotifyWebPlaybackService: NSObject {
             event = .stateChanged(Self.playbackState(from: payload["state"]))
         case "autoplayFailed":
             event = .autoplayFailed
+        case "warning":
+            let message = (payload["message"] as? String) ?? "Spotify playback failed"
+            event = .failed(message)
         case "error":
             let message = (payload["message"] as? String) ?? "Spotify Web Playback failed"
             status = .failed(message)
@@ -285,9 +318,10 @@ public final class SpotifyWebPlaybackService: NSObject {
             player.addListener('ready', ({ device_id }) => emit('ready', { deviceID: device_id }));
             player.addListener('not_ready', () => emit('offline'));
             player.addListener('autoplay_failed', () => emit('autoplayFailed'));
-            for (const type of ['initialization_error', 'authentication_error', 'account_error', 'playback_error']) {
+            for (const type of ['initialization_error', 'authentication_error', 'account_error']) {
               player.addListener(type, ({ message }) => emit('error', { message }));
             }
+            player.addListener('playback_error', ({ message }) => emit('warning', { message }));
             player.addListener('player_state_changed', state => {
               if (!state) {
                 emit('state', { state: null });

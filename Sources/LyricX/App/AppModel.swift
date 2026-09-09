@@ -27,6 +27,32 @@ final class AppModel {
     var spotifyActiveDeviceName: String?
     var spotifyPlaybackStatus: String?
     var spotifyWebPlaybackStatus: SpotifyWebPlaybackStatus = .idle
+    var spotifyIsPlayingInLyricX = false
+
+
+    var canRequestLyricXPlayback: Bool {
+        guard spotifyConnectionStatus.isConnected, !spotifyIsPlayingInLyricX else {
+            return false
+        }
+        return spotifyWebPlaybackStatus != .loading
+    }
+
+
+    var spotifyWebPlaybackActionTitle: String {
+        if spotifyIsPlayingInLyricX {
+            return "Playing in LyricX"
+        }
+        switch spotifyWebPlaybackStatus {
+        case .idle:
+            return "Start LyricX Player"
+        case .loading:
+            return "Starting LyricX Player..."
+        case .ready:
+            return "Listen in LyricX"
+        case .offline, .failed:
+            return "Retry LyricX Player"
+        }
+    }
 
     @ObservationIgnored let spotifyWebPlaybackService: SpotifyWebPlaybackService?
     @ObservationIgnored private let playbackService: any PlaybackArtworkService
@@ -269,7 +295,8 @@ final class AppModel {
                 SpotifyWebPlaybackService(authorizationService: $0)
             }
             let coordinator = SpotifyPlaybackCoordinator(
-                authorizationService: spotifyAuthorizationService
+                authorizationService: spotifyAuthorizationService,
+                webPlaybackService: webPlaybackService
             )
             self.playbackService = coordinator
             self.spotifyPlaybackCoordinator = coordinator
@@ -286,8 +313,12 @@ final class AppModel {
         if spotifyAuthorizationService != nil {
             spotifyConnectionStatus = .disconnected
         }
-        spotifyWebPlaybackService?.onEvent = { [weak self] event in
+        let coordinator = spotifyPlaybackCoordinator
+        spotifyWebPlaybackService?.onEvent = { [weak self, coordinator] event in
             self?.handleSpotifyWebPlaybackEvent(event)
+            Task {
+                await coordinator?.receiveWebPlaybackEvent(event)
+            }
         }
         if startsPolling {
             restoreSpotifySession()
@@ -347,6 +378,27 @@ final class AppModel {
         }
     }
 
+    func listenInLyricX() {
+        guard let deviceID = spotifyWebPlaybackStatus.deviceID,
+              let coordinator = spotifyPlaybackCoordinator else {
+            spotifyWebPlaybackStatus = .loading
+            spotifyWebPlaybackService?.start()
+            return
+        }
+
+        spotifyPlaybackStatus = "Switching playback to LyricX..."
+        Task { [weak self, coordinator] in
+            do {
+                try await coordinator.activateEmbeddedPlayback(deviceID: deviceID)
+                self?.spotifyIsPlayingInLyricX = true
+                self?.spotifyActiveDeviceName = "LyricX"
+                self?.spotifyPlaybackStatus = nil
+            } catch {
+                self?.spotifyPlaybackStatus = error.localizedDescription
+            }
+        }
+    }
+
     func connectSpotify() {
         guard let service = spotifyAuthorizationService else {
             spotifyConnectionStatus = .unavailable("Set SPOTIFY_CLIENT_ID when building LyricX")
@@ -391,6 +443,7 @@ final class AppModel {
             self?.spotifyActiveDeviceName = nil
             self?.spotifyPlaybackStatus = nil
             self?.spotifyWebPlaybackStatus = .idle
+            self?.spotifyIsPlayingInLyricX = false
         }
     }
 
@@ -443,6 +496,7 @@ final class AppModel {
         if let coordinator = spotifyPlaybackCoordinator {
             spotifyActiveDeviceName = await coordinator.currentDevice()?.name
             spotifyPlaybackStatus = await coordinator.statusMessage()
+            spotifyIsPlayingInLyricX = await coordinator.isUsingEmbeddedPlayback()
             if spotifyConnectionStatus.isConnected, await !coordinator.spotifyConnected() {
                 spotifyConnectionStatus = .failed("Spotify session expired. Connect again to use Spotify Connect.")
             }
@@ -776,8 +830,14 @@ final class AppModel {
             spotifyWebPlaybackStatus = .ready(deviceID: deviceID)
         case .offline:
             spotifyWebPlaybackStatus = .offline
+            spotifyIsPlayingInLyricX = false
         case .failed(let message):
-            spotifyWebPlaybackStatus = .failed(message)
+            if case .ready = spotifyWebPlaybackService?.status {
+                spotifyPlaybackStatus = message
+            } else {
+                spotifyWebPlaybackStatus = .failed(message)
+                spotifyIsPlayingInLyricX = false
+            }
         case .autoplayFailed:
             spotifyWebPlaybackStatus = .failed("Playback was blocked. Try Listen in LyricX again.")
         case .stateChanged:

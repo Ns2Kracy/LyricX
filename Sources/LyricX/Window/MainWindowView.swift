@@ -104,37 +104,53 @@ struct MainWindowView: View {
 
     private var playbackControls: some View {
         HStack(spacing: 10) {
-            Button {
-                model.previousTrack()
-            } label: {
-                Label("Previous Track", systemImage: "backward.fill")
-                    .labelStyle(.iconOnly)
-            }
-            .help("Previous Track")
-            .accessibilityLabel("Previous Track")
+            HStack(spacing: 10) {
+                Button {
+                    model.previousTrack()
+                } label: {
+                    Label("Previous Track", systemImage: "backward.fill")
+                        .labelStyle(.iconOnly)
+                }
+                .help("Previous Track")
+                .accessibilityLabel("Previous Track")
 
-            Button {
-                model.playPause()
-            } label: {
-                Label(playPauseLabel, systemImage: playPauseIcon)
-                    .labelStyle(.iconOnly)
-            }
-            .keyboardShortcut(.space, modifiers: [])
-            .help(playPauseLabel)
-            .accessibilityLabel(playPauseLabel)
+                Button {
+                    model.playPause()
+                } label: {
+                    Label(playPauseLabel, systemImage: playPauseIcon)
+                        .labelStyle(.iconOnly)
+                }
+                .keyboardShortcut(.space, modifiers: [])
+                .help(playPauseLabel)
+                .accessibilityLabel(playPauseLabel)
 
-            Button {
-                model.nextTrack()
-            } label: {
-                Label("Next Track", systemImage: "forward.fill")
-                    .labelStyle(.iconOnly)
+                Button {
+                    model.nextTrack()
+                } label: {
+                    Label("Next Track", systemImage: "forward.fill")
+                        .labelStyle(.iconOnly)
+                }
+                .help("Next Track")
+                .accessibilityLabel("Next Track")
             }
-            .help("Next Track")
-            .accessibilityLabel("Next Track")
+            .disabled(model.playback.state == .notRunning || model.playback.state == .unavailable)
+
+            if model.spotifyConnectionStatus.isConnected {
+                Divider()
+                    .frame(height: 22)
+
+                Button {
+                    model.listenInLyricX()
+                } label: {
+                    Label(model.spotifyWebPlaybackActionTitle, systemImage: "hifispeaker.2.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!model.canRequestLyricXPlayback)
+                .help("Play Spotify audio directly in LyricX")
+            }
         }
         .buttonStyle(.bordered)
         .controlSize(.large)
-        .disabled(model.playback.state == .notRunning || model.playback.state == .unavailable)
     }
 
     private var lyrics: some View {
