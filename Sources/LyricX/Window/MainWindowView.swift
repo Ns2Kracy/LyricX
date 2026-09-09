@@ -9,6 +9,15 @@ struct MainWindowView: View {
     var body: some View {
         nowPlaying
             .frame(minWidth: 620, idealWidth: 700, minHeight: 520, idealHeight: 560)
+            .background(alignment: .topLeading) {
+                if let service = model.spotifyWebPlaybackService {
+                    SpotifyWebPlaybackHostView(service: service)
+                        .frame(width: 1, height: 1)
+                        .opacity(0.01)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
     }
 
     private var nowPlaying: some View {

@@ -26,7 +26,9 @@ final class AppModel {
     )
     var spotifyActiveDeviceName: String?
     var spotifyPlaybackStatus: String?
+    var spotifyWebPlaybackStatus: SpotifyWebPlaybackStatus = .idle
 
+    @ObservationIgnored let spotifyWebPlaybackService: SpotifyWebPlaybackService?
     @ObservationIgnored private let playbackService: any PlaybackArtworkService
     @ObservationIgnored private let spotifyPlaybackCoordinator: SpotifyPlaybackCoordinator?
     @ObservationIgnored private let spotifyAuthorizationService: SpotifyAuthorizationService?
@@ -261,12 +263,17 @@ final class AppModel {
         if let playbackService {
             self.playbackService = playbackService
             self.spotifyPlaybackCoordinator = nil
+            self.spotifyWebPlaybackService = nil
         } else {
+            let webPlaybackService = spotifyAuthorizationService.map {
+                SpotifyWebPlaybackService(authorizationService: $0)
+            }
             let coordinator = SpotifyPlaybackCoordinator(
                 authorizationService: spotifyAuthorizationService
             )
             self.playbackService = coordinator
             self.spotifyPlaybackCoordinator = coordinator
+            self.spotifyWebPlaybackService = webPlaybackService
         }
         self.lyricsRepository = lyricsRepository
         self.settingsStore = settingsStore
@@ -278,6 +285,9 @@ final class AppModel {
         loadPresetState()
         if spotifyAuthorizationService != nil {
             spotifyConnectionStatus = .disconnected
+        }
+        spotifyWebPlaybackService?.onEvent = { [weak self] event in
+            self?.handleSpotifyWebPlaybackEvent(event)
         }
         if startsPolling {
             restoreSpotifySession()
@@ -345,7 +355,8 @@ final class AppModel {
 
         spotifyConnectionStatus = .connecting
         let coordinator = spotifyPlaybackCoordinator
-        Task { [weak self, service, coordinator] in
+        let webPlaybackService = spotifyWebPlaybackService
+        Task { [weak self, service, coordinator, webPlaybackService] in
             do {
                 _ = try await service.connect { url in
                     await MainActor.run {
@@ -354,6 +365,7 @@ final class AppModel {
                 }
                 await coordinator?.setSpotifyConnected(true)
                 self?.spotifyConnectionStatus = .connected
+                webPlaybackService?.start()
             } catch {
                 self?.spotifyConnectionStatus = .failed(error.localizedDescription)
             }
@@ -366,7 +378,9 @@ final class AppModel {
         }
 
         let coordinator = spotifyPlaybackCoordinator
-        Task { [weak self, service, coordinator] in
+        let webPlaybackService = spotifyWebPlaybackService
+        Task { [weak self, service, coordinator, webPlaybackService] in
+            await webPlaybackService?.disconnect()
             do {
                 try await service.disconnect()
                 self?.spotifyConnectionStatus = .disconnected
@@ -376,6 +390,7 @@ final class AppModel {
             await coordinator?.setSpotifyConnected(false)
             self?.spotifyActiveDeviceName = nil
             self?.spotifyPlaybackStatus = nil
+            self?.spotifyWebPlaybackStatus = .idle
         }
     }
 
@@ -739,15 +754,34 @@ final class AppModel {
         }
 
         let coordinator = spotifyPlaybackCoordinator
-        Task { [weak self, service, coordinator] in
+        let webPlaybackService = spotifyWebPlaybackService
+        Task { [weak self, service, coordinator, webPlaybackService] in
             do {
                 let restored = try await service.restore()
                 await coordinator?.setSpotifyConnected(restored)
                 self?.spotifyConnectionStatus = restored ? .connected : .disconnected
+                if restored {
+                    webPlaybackService?.start()
+                }
             } catch {
                 await coordinator?.setSpotifyConnected(false)
                 self?.spotifyConnectionStatus = .failed(error.localizedDescription)
             }
+        }
+    }
+
+    private func handleSpotifyWebPlaybackEvent(_ event: SpotifyWebPlaybackEvent) {
+        switch event {
+        case .ready(let deviceID):
+            spotifyWebPlaybackStatus = .ready(deviceID: deviceID)
+        case .offline:
+            spotifyWebPlaybackStatus = .offline
+        case .failed(let message):
+            spotifyWebPlaybackStatus = .failed(message)
+        case .autoplayFailed:
+            spotifyWebPlaybackStatus = .failed("Playback was blocked. Try Listen in LyricX again.")
+        case .stateChanged:
+            break
         }
     }
 
