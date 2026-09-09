@@ -6,8 +6,6 @@ final class MenuBarStatusItemView: NSControl {
     private let horizontalPadding: CGFloat = 8
     private let iconSize: CGFloat = 14
     private let iconSpacing: CGFloat = 4
-    private let artworkSize: CGFloat = 16
-    private let artworkSpacing: CGFloat = 4
     private var presentation = MenuBarPresentation(
         text: "LyricX",
         accessibilityText: "LyricX",
@@ -15,23 +13,15 @@ final class MenuBarStatusItemView: NSControl {
         behavior: .staticText
     )
     private var date = Date()
+    private var isNextToArtwork = false
     private var clickFeedback = MenuBarClickFeedbackState()
     private var clickReleaseMonitors: [Any] = []
     private var cachedTextKey: AttributedTextKey?
     private var cachedAttributedText: NSAttributedString?
-    private var cachedArtwork: TrackArtwork?
-    private var cachedArtworkImage: NSImage?
-    private let artworkLayer = CALayer()
     var secondaryAction: Selector?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        wantsLayer = true
-        artworkLayer.contentsGravity = .resizeAspectFill
-        artworkLayer.cornerRadius = 3
-        artworkLayer.masksToBounds = true
-        artworkLayer.isHidden = true
-        layer?.addSublayer(artworkLayer)
         setFrameSize(intrinsicContentSize)
     }
 
@@ -43,18 +33,13 @@ final class MenuBarStatusItemView: NSControl {
         NSSize(width: width(for: presentation), height: NSStatusBar.system.thickness)
     }
 
-    func update(presentation: MenuBarPresentation, artwork: TrackArtwork?, date: Date) {
+    func update(
+        presentation: MenuBarPresentation,
+        isNextToArtwork: Bool = false,
+        date: Date
+    ) {
         self.presentation = presentation
-        if artwork != cachedArtwork {
-            cachedArtwork = artwork
-            cachedArtworkImage = artwork.flatMap { NSImage(data: $0.data) }
-            artworkLayer.contents = cachedArtworkImage?.cgImage(
-                forProposedRect: nil,
-                context: nil,
-                hints: nil
-            )
-            artworkLayer.isHidden = cachedArtworkImage == nil
-        }
+        self.isNextToArtwork = isNextToArtwork
         self.date = date
         setAccessibilityLabel(presentation.accessibilityText)
         invalidateIntrinsicContentSize()
@@ -127,16 +112,6 @@ final class MenuBarStatusItemView: NSControl {
         drawText(in: textRect, color: color)
     }
 
-    override func layout() {
-        super.layout()
-        artworkLayer.frame = NSRect(
-            x: bounds.maxX - artworkSize - 4,
-            y: floor(bounds.midY - artworkSize / 2),
-            width: artworkSize,
-            height: artworkSize
-        )
-    }
-
     override func mouseDown(with event: NSEvent) {
         beginClickFeedback()
         sendAction(action, to: target)
@@ -177,11 +152,8 @@ final class MenuBarStatusItemView: NSControl {
             maxViewportWidth: presentation.style.viewportWidth,
             contentWidth: contentWidth(for: presentation, attributedText: attributedText),
             leadingPadding: Double(horizontalPadding),
-            trailingPadding: cachedArtworkImage == nil ? Double(horizontalPadding) : 4,
-            leadingAccessoryWidth: presentation.symbol == nil ? 0 : Double(iconSize + iconSpacing),
-            trailingAccessoryWidth: cachedArtworkImage == nil
-                ? 0
-                : Double(artworkSpacing + artworkSize)
+            trailingPadding: isNextToArtwork ? 0 : Double(horizontalPadding),
+            leadingAccessoryWidth: presentation.symbol == nil ? 0 : Double(iconSize + iconSpacing)
         )
     }
 

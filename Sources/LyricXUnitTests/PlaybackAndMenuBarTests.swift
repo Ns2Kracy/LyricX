@@ -123,40 +123,27 @@ extension LyricXUnitTests {
     }
 
     @MainActor
-    static func testMenuBarStatusItemArtworkOccupiesSpaceOnlyWhenDrawable() throws {
+    static func testMenuBarStatusItemKeepsShortLyricsCompact() throws {
         let view = MenuBarStatusItemView(frame: .zero)
-        let presentation = MenuBarPresentation(
-            text: "Test",
-            accessibilityText: "Test",
+        let shortPresentation = MenuBarPresentation(
+            text: "Short",
+            accessibilityText: "Short",
+            symbol: nil,
+            behavior: .staticText
+        )
+        let longText = String(repeating: "Long lyric ", count: 30)
+        let longPresentation = MenuBarPresentation(
+            text: longText,
+            accessibilityText: longText,
             symbol: nil,
             behavior: .staticText
         )
 
-        view.update(presentation: presentation, artwork: nil, date: Date())
-        let widthWithoutArtwork = view.intrinsicContentSize.width
+        view.update(presentation: shortPresentation, date: Date())
+        let shortWidth = view.intrinsicContentSize.width
+        view.update(presentation: longPresentation, date: Date())
 
-        let image = NSImage(size: NSSize(width: 2, height: 2))
-        image.lockFocus()
-        NSColor.red.setFill()
-        NSRect(x: 0, y: 0, width: 2, height: 2).fill()
-        image.unlockFocus()
-        let imageData = try require(image.tiffRepresentation, "Test image should encode")
-        view.update(
-            presentation: presentation,
-            artwork: TrackArtwork(data: imageData, mimeType: "image/tiff"),
-            date: Date()
-        )
-        try expectEqual(view.intrinsicContentSize.width, widthWithoutArtwork + 16)
-
-        view.update(
-            presentation: presentation,
-            artwork: TrackArtwork(
-                data: Data([0x01]),
-                mimeType: "application/octet-stream"
-            ),
-            date: Date()
-        )
-        try expectEqual(view.intrinsicContentSize.width, widthWithoutArtwork)
+        try expectEqual(shortWidth < view.intrinsicContentSize.width, true)
     }
 
     @MainActor
@@ -170,7 +157,7 @@ extension LyricXUnitTests {
             behavior: .staticText
         )
 
-        view.update(presentation: presentation, artwork: nil, date: Date())
+        view.update(presentation: presentation, date: Date())
 
         // NSStatusItem owns the view frame; update only changes its intrinsic size.
         try expectEqual(view.frame.width, 100)
@@ -253,17 +240,16 @@ extension LyricXUnitTests {
         try expectEqual(layout.textViewportWidth, 120)
     }
 
-    static func testMenuBarLayoutUsesReducedRightPaddingForArtwork() throws {
+    static func testMenuBarLayoutSupportsNoTrailingPaddingNextToArtwork() throws {
         let layout = MenuBarStatusItemLayout(
             maxViewportWidth: 180,
             contentWidth: 120,
             leadingPadding: 8,
-            trailingPadding: 4,
-            leadingAccessoryWidth: 0,
-            trailingAccessoryWidth: 20
+            trailingPadding: 0,
+            leadingAccessoryWidth: 0
         )
 
-        try expectEqual(layout.statusItemWidth, 152)
+        try expectEqual(layout.statusItemWidth, 128)
         try expectEqual(layout.textViewportMinX, 8)
         try expectEqual(layout.textViewportWidth, 120)
     }
