@@ -9,6 +9,11 @@ public struct SpotifyConfiguration: Equatable, Sendable {
         guard !clientID.isEmpty, !clientID.contains("$(") else {
             throw SpotifyConfigurationError.missingClientID
         }
+        guard redirectPath.hasPrefix("/"),
+              !redirectPath.contains("?"),
+              !redirectPath.contains("#") else {
+            throw SpotifyConfigurationError.invalidRedirectPath
+        }
 
         self.clientID = clientID
         self.redirectPath = redirectPath
@@ -26,9 +31,15 @@ public struct SpotifyConfiguration: Equatable, Sendable {
 }
 
 public enum SpotifyConfigurationError: LocalizedError, Equatable {
+    case invalidRedirectPath
     case missingClientID
 
     public var errorDescription: String? {
-        "Spotify Client ID is not configured"
+        switch self {
+        case .invalidRedirectPath:
+            return "Spotify redirect path is invalid"
+        case .missingClientID:
+            return "Spotify Client ID is not configured"
+        }
     }
 }

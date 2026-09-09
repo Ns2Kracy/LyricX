@@ -1,4 +1,5 @@
 import LyricXCore
+import LyricXMac
 import SwiftUI
 
 @MainActor
@@ -147,12 +148,44 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
     private var playerSection: some View {
-        Section("Player") {
-            LabeledContent("Music App") {
-                Label("Spotify", systemImage: "checkmark.circle.fill")
+        Section("Spotify Beta") {
+            LabeledContent("Connection") {
+                Label(
+                    model.spotifyConnectionStatus.title,
+                    systemImage: model.spotifyConnectionStatus.isConnected
+                        ? "checkmark.circle.fill"
+                        : "person.crop.circle.badge.questionmark"
+                )
             }
 
+            if let detail = model.spotifyConnectionStatus.detail {
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack {
+                Spacer()
+                if model.spotifyConnectionStatus.isConnected {
+                    Button("Disconnect", role: .destructive) {
+                        model.disconnectSpotify()
+                    }
+                } else {
+                    Button("Connect Spotify") {
+                        model.connectSpotify()
+                    }
+                    .disabled(!model.spotifyConnectionStatus.canConnect)
+                }
+            }
+
+            Text("Spotify Development Mode currently allows only accounts added to the app allowlist.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+
+        Section("Other Players") {
             disabledPlayerRow("Apple Music")
             disabledPlayerRow("NetEase Cloud Music")
             disabledPlayerRow("QQ Music")

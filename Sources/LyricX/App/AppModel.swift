@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import LyricXCore
 import LyricXMac
@@ -20,8 +21,12 @@ final class AppModel {
     var activeStylePresetID = LyricStylePreset.defaults[0].id
     var latestUpdate: AppUpdate?
     var updateStatus = "Updates not checked"
+    var spotifyConnectionStatus: SpotifyConnectionStatus = .unavailable(
+        "Set SPOTIFY_CLIENT_ID when building LyricX"
+    )
 
     @ObservationIgnored private let playbackService: any PlaybackArtworkService
+    @ObservationIgnored private let spotifyAuthorizationService: SpotifyAuthorizationService?
     @ObservationIgnored private let lyricsRepository: LyricsRepository
     @ObservationIgnored private let settingsStore: AppSettingsStore
     @ObservationIgnored private let presetStore: LyricStylePresetStore
@@ -236,6 +241,7 @@ final class AppModel {
 
     init(
         playbackService: any PlaybackArtworkService = SpotifyAppleScriptPlaybackService(),
+        spotifyAuthorizationService: SpotifyAuthorizationService? = AppModel.defaultSpotifyAuthorizationService(),
         lyricsRepository: LyricsRepository = LyricsRepository(),
         settingsStore: AppSettingsStore = AppSettingsStore(fileURL: AppModel.defaultSettingsStoreURL()),
         presetStore: LyricStylePresetStore = LyricStylePresetStore(fileURL: AppModel.defaultPresetStoreURL()),
@@ -249,6 +255,7 @@ final class AppModel {
         startsPolling: Bool = true
     ) {
         self.playbackService = playbackService
+        self.spotifyAuthorizationService = spotifyAuthorizationService
         self.lyricsRepository = lyricsRepository
         self.settingsStore = settingsStore
         self.presetStore = presetStore
@@ -257,7 +264,11 @@ final class AppModel {
         self.translationCache = translationCache
         settings = (try? settingsStore.load()) ?? .default
         loadPresetState()
+        if spotifyAuthorizationService != nil {
+            spotifyConnectionStatus = .disconnected
+        }
         if startsPolling {
+            restoreSpotifySession()
             startPolling()
         }
     }
@@ -311,6 +322,42 @@ final class AppModel {
     func previousTrack() {
         runPlayerCommand { service in
             await service.previousTrack()
+        }
+    }
+
+    func connectSpotify() {
+        guard let service = spotifyAuthorizationService else {
+            spotifyConnectionStatus = .unavailable("Set SPOTIFY_CLIENT_ID when building LyricX")
+            return
+        }
+
+        spotifyConnectionStatus = .connecting
+        Task { [weak self, service] in
+            do {
+                _ = try await service.connect { url in
+                    await MainActor.run {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                self?.spotifyConnectionStatus = .connected
+            } catch {
+                self?.spotifyConnectionStatus = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    func disconnectSpotify() {
+        guard let service = spotifyAuthorizationService else {
+            return
+        }
+
+        Task { [weak self, service] in
+            do {
+                try await service.disconnect()
+                self?.spotifyConnectionStatus = .disconnected
+            } catch {
+                self?.spotifyConnectionStatus = .failed(error.localizedDescription)
+            }
         }
     }
 
@@ -659,6 +706,27 @@ final class AppModel {
 
     private func persistSettings() {
         try? settingsStore.save(settings)
+    }
+
+    private func restoreSpotifySession() {
+        guard let service = spotifyAuthorizationService else {
+            return
+        }
+
+        Task { [weak self, service] in
+            do {
+                self?.spotifyConnectionStatus = try await service.restore() ? .connected : .disconnected
+            } catch {
+                self?.spotifyConnectionStatus = .failed(error.localizedDescription)
+            }
+        }
+    }
+
+    private static func defaultSpotifyAuthorizationService() -> SpotifyAuthorizationService? {
+        guard let configuration = try? SpotifyConfiguration.load() else {
+            return nil
+        }
+        return SpotifyAuthorizationService(configuration: configuration)
     }
 
     private static func defaultSettingsStoreURL() -> URL {
