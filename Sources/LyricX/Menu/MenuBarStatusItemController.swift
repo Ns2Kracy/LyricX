@@ -92,7 +92,7 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
         if popover.isShown {
             popover.performClose(sender)
         } else {
-            popover.show(relativeTo: statusView.bounds, of: statusView, preferredEdge: .minY)
+            popover.show(relativeTo: popoverAnchorRect, of: statusView, preferredEdge: .minY)
             startOutsideClickMonitor()
             render(date: Date(), force: true)
         }
@@ -190,6 +190,15 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
         render(date: Date(), force: false)
     }
 
+    private var popoverAnchorRect: NSRect {
+        NSRect(
+            x: statusView.bounds.maxX - 1,
+            y: statusView.bounds.minY,
+            width: 1,
+            height: statusView.bounds.height
+        )
+    }
+
     private func render(date: Date, force: Bool) {
         model.refreshLyricContext(at: date)
         let presentation = model.menuBarPresentation(at: date)
@@ -200,11 +209,12 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
         }
 
         statusView.update(presentation: presentation, artwork: artwork, date: date)
-        if !popover.isShown {
-            statusItem.length = statusView.intrinsicContentSize.width
-        }
+        statusItem.length = statusView.intrinsicContentSize.width
         if let button = statusItem.button {
             statusView.frame = button.bounds
+        }
+        if popover.isShown {
+            popover.positioningRect = popoverAnchorRect
         }
         lastPresentation = presentation
         lastArtwork = artwork

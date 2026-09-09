@@ -13,8 +13,13 @@ extension LyricXUnitTests {
 
     static func testSpotifyAuthorizationURLRequestsPlaybackScopes() throws {
         let configuration = try SpotifyConfiguration(clientID: "test-client")
+        try expectEqual(SpotifyConfiguration.redirectPort, 43_821)
         let redirectURI = try require(
-            URL(string: "http://127.0.0.1:49123/callback"),
+            URL(
+                string: "http://127.0.0.1:"
+                    + String(SpotifyConfiguration.redirectPort)
+                    + "/callback"
+            ),
             "Redirect URL should be valid"
         )
         let url = try SpotifyAuthorizationService.authorizationURL(
@@ -28,6 +33,7 @@ extension LyricXUnitTests {
         )
 
         try expectEqual(queryValue("client_id", in: components), "test-client")
+        try expectEqual(queryValue("redirect_uri", in: components), redirectURI.absoluteString)
         try expectEqual(queryValue("state", in: components), "expected-state")
         try expectEqual(
             queryValue("scope", in: components),

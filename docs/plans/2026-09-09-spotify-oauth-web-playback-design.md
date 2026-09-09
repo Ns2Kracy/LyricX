@@ -37,7 +37,7 @@ The first implementation slice is a WebKit feasibility gate. Embedded playback s
 
 1. The user selects Connect Spotify in Settings.
 2. LyricX creates a cryptographically random PKCE verifier, S256 challenge, and CSRF state.
-3. A loopback listener binds to `127.0.0.1` on an available port.
+3. A loopback listener binds to `127.0.0.1:43821`, matching the exact URI accepted by Spotify Dashboard.
 4. LyricX opens the Spotify authorization page in the system browser.
 5. The callback must use the expected host and path and contain the expected state.
 6. LyricX exchanges the code with the same redirect URI and verifier.

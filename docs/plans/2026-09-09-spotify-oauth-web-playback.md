@@ -57,7 +57,7 @@ Expected: debug build succeeds; AppleScript remains the only runtime source.
 
 1. Define minimal session models: authorization status, account summary, access-token expiry, refresh token, granted scopes, and typed OAuth failures.
 2. Implement PKCE verifier generation with secure random bytes and an S256 challenge with CryptoKit. Generate an independent CSRF `state` value.
-3. Implement a one-shot loopback callback listener bound to `127.0.0.1` on a dynamic port. Accept only `GET /callback`, require the exact state, return a small success/error HTTP page, and close after success, denial, or timeout.
+3. Implement a one-shot loopback callback listener bound to `127.0.0.1:43821`. Accept only `GET /callback`, require the exact state, return a small success/error HTTP page, and close after success, denial, or timeout.
 4. Open the authorization URL through `NSWorkspace`. Request only `streaming`, `user-read-private`, `user-read-email`, `user-read-playback-state`, and `user-modify-playback-state`.
 5. Exchange the code using Authorization Code with PKCE. Store only the refresh token in a generic-password Keychain item under the LyricX bundle service name; retain access tokens in actor memory.
 6. Restore a session by refreshing from Keychain. On refresh responses without a replacement refresh token, preserve the existing token. Redact token-bearing data from all errors.
@@ -206,7 +206,7 @@ Expected: common Spotify edition metadata no longer prevents LRCLIB matches, whi
 3. Add coordinator tests proving Web API versus AppleScript routing and proving initialization alone never transfers playback.
 4. Add lyric tests for title/artist variants, normalized scoring, duration rejection, bounded retry, provider order, and URL encoding.
 5. Update existing playback test doubles for the async protocol and register every new test in `TestMain.swift`.
-6. Update `README.md` with Spotify Beta setup, `SPOTIFY_CLIENT_ID`, the required redirect URI `http://127.0.0.1/callback`, Development Mode allowlisting, Premium requirements, Keychain behavior, fallback behavior, and the fact that Spotify lyrics are unavailable through the supported API.
+6. Update `README.md` with Spotify Beta setup, `SPOTIFY_CLIENT_ID`, the required redirect URI `http://127.0.0.1:43821/callback`, Development Mode allowlisting, Premium requirements, Keychain behavior, fallback behavior, and the fact that Spotify lyrics are unavailable through the supported API.
 7. Run the complete checks once integration is ready:
 
 ```bash

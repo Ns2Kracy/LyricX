@@ -21,11 +21,17 @@ final class MenuBarStatusItemView: NSControl {
     private var cachedAttributedText: NSAttributedString?
     private var cachedArtwork: TrackArtwork?
     private var cachedArtworkImage: NSImage?
+    private let artworkLayer = CALayer()
     var secondaryAction: Selector?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
+        artworkLayer.contentsGravity = .resizeAspectFill
+        artworkLayer.cornerRadius = 3
+        artworkLayer.masksToBounds = true
+        artworkLayer.isHidden = true
+        layer?.addSublayer(artworkLayer)
         setFrameSize(intrinsicContentSize)
     }
 
@@ -42,10 +48,17 @@ final class MenuBarStatusItemView: NSControl {
         if artwork != cachedArtwork {
             cachedArtwork = artwork
             cachedArtworkImage = artwork.flatMap { NSImage(data: $0.data) }
+            artworkLayer.contents = cachedArtworkImage?.cgImage(
+                forProposedRect: nil,
+                context: nil,
+                hints: nil
+            )
+            artworkLayer.isHidden = cachedArtworkImage == nil
         }
         self.date = date
         setAccessibilityLabel(presentation.accessibilityText)
         invalidateIntrinsicContentSize()
+        needsLayout = true
         needsDisplay = true
     }
 
@@ -112,7 +125,16 @@ final class MenuBarStatusItemView: NSControl {
         }
 
         drawText(in: textRect, color: color)
-        drawArtwork(after: textRect)
+    }
+
+    override func layout() {
+        super.layout()
+        artworkLayer.frame = NSRect(
+            x: bounds.maxX - artworkSize - 4,
+            y: floor(bounds.midY - artworkSize / 2),
+            width: artworkSize,
+            height: artworkSize
+        )
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -191,30 +213,6 @@ final class MenuBarStatusItemView: NSControl {
         }
 
         context.restoreGraphicsState()
-    }
-
-    private func drawArtwork(after textRect: NSRect) {
-        guard let cachedArtworkImage else {
-            return
-        }
-
-        let rect = NSRect(
-            x: textRect.maxX + artworkSpacing,
-            y: floor(textRect.midY - artworkSize / 2),
-            width: artworkSize,
-            height: artworkSize
-        )
-        NSGraphicsContext.saveGraphicsState()
-        NSBezierPath(roundedRect: rect, xRadius: 3, yRadius: 3).addClip()
-        cachedArtworkImage.draw(
-            in: rect,
-            from: .zero,
-            operation: .sourceOver,
-            fraction: 1,
-            respectFlipped: true,
-            hints: nil
-        )
-        NSGraphicsContext.restoreGraphicsState()
     }
 
     private func drawSymbol(named name: String, color: NSColor) {

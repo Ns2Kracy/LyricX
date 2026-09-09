@@ -406,8 +406,11 @@ private final class SpotifyLoopbackCallbackServer: @unchecked Sendable {
     private let callback = OneShot<SpotifyOAuthCallback>()
 
     init(path: String, expectedState: String) throws {
+        guard let port = NWEndpoint.Port(rawValue: SpotifyConfiguration.redirectPort) else {
+            throw SpotifyAuthorizationError.callbackFailed
+        }
         let parameters = NWParameters.tcp
-        parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
+        parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: port)
         self.listener = try NWListener(using: parameters)
         self.path = path
         self.expectedState = expectedState

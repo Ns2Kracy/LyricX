@@ -1,6 +1,8 @@
 import Foundation
 
 public struct SpotifyConfiguration: Equatable, Sendable {
+    public static let redirectPort: UInt16 = 43_821
+
     public let clientID: String
     public let redirectPath: String
 

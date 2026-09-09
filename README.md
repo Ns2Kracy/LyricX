@@ -66,7 +66,7 @@ LyricX opens a main window and also keeps the lyric line in the menu bar. Open t
 ## Spotify Beta Setup
 
 1. Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Register `http://127.0.0.1/callback` as a redirect URI. Do not add a port; Spotify permits the authorization request to add a dynamic port for a loopback IP literal.
+2. Register `http://127.0.0.1:43821/callback` as the redirect URI. LyricX uses this fixed loopback port because Spotify Dashboard currently rejects the documented portless form as insecure.
 3. While the app is in Development Mode, add each test user to its allowlist.
 4. Build or run LyricX with `SPOTIFY_CLIENT_ID` as shown above. A Client Secret is neither needed nor accepted.
 5. Open Settings > Spotify Beta, choose Connect Spotify, and complete authorization in the browser.
