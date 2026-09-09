@@ -17,16 +17,16 @@ extension LyricXUnitTests {
         try expectEqual(SpotifyAppleScriptPlayerCommand.previousTrack.appleScript, "tell application \"Spotify\" to previous track")
     }
 
-    static func testSpotifyServiceRunsControlCommand() throws {
+    static func testSpotifyServiceRunsControlCommand() async throws {
         let recorder = ScriptRecorder()
         let service = SpotifyAppleScriptPlaybackService(runScript: recorder.run)
 
-        service.nextTrack()
+        await service.nextTrack()
 
         try expectEqual(recorder.scripts, [SpotifyAppleScriptPlayerCommand.nextTrack.appleScript])
     }
 
-    static func testSpotifyParseReadsArtworkURL() throws {
+    static func testSpotifyParseReadsArtworkURL() async throws {
         let service = SpotifyAppleScriptPlaybackService(runScript: { _ in
             """
         playing
@@ -38,7 +38,7 @@ extension LyricXUnitTests {
         https://i.scdn.co/image/example
         """
         })
-        let snapshot = service.currentSnapshot()
+        let snapshot = await service.currentSnapshot()
 
         try expectEqual(snapshot.track?.artworkURL, URL(string: "https://i.scdn.co/image/example"))
     }

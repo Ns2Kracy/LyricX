@@ -18,6 +18,8 @@
     <string>0.1.6</string>
     <key>CFBundleVersion</key>
     <string>7</string>
+    <key>SpotifyClientID</key>
+    <string></string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>

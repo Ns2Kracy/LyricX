@@ -1,10 +1,10 @@
 import Foundation
 
 public protocol PlayerService: Sendable {
-    func currentSnapshot() -> PlaybackSnapshot
-    func playPause()
-    func nextTrack()
-    func previousTrack()
+    func currentSnapshot() async -> PlaybackSnapshot
+    func playPause() async
+    func nextTrack() async
+    func previousTrack() async
 }
 
 public protocol PlaybackArtworkService: PlayerService, ArtworkProvider {}

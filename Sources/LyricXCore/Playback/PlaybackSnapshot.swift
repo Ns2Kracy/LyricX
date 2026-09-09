@@ -6,13 +6,28 @@ public struct PlaybackTrack: Equatable, Hashable, Sendable {
     public let album: String?
     public let duration: TimeInterval?
     public let artworkURL: URL?
+    public let sourceID: String?
+    public let sourceURI: String?
+    public let isrc: String?
 
-    public init(title: String, artist: String, album: String? = nil, duration: TimeInterval? = nil, artworkURL: URL? = nil) {
+    public init(
+        title: String,
+        artist: String,
+        album: String? = nil,
+        duration: TimeInterval? = nil,
+        artworkURL: URL? = nil,
+        sourceID: String? = nil,
+        sourceURI: String? = nil,
+        isrc: String? = nil
+    ) {
         self.title = title
         self.artist = artist
         self.album = album?.nilIfBlank
         self.duration = duration
         self.artworkURL = artworkURL
+        self.sourceID = sourceID?.nilIfBlank
+        self.sourceURI = sourceURI?.nilIfBlank
+        self.isrc = isrc?.nilIfBlank
     }
 }
 

@@ -21,7 +21,7 @@ final class AppModel {
     var latestUpdate: AppUpdate?
     var updateStatus = "Updates not checked"
 
-    @ObservationIgnored private let playbackService: SpotifyAppleScriptPlaybackService
+    @ObservationIgnored private let playbackService: any PlaybackArtworkService
     @ObservationIgnored private let lyricsRepository: LyricsRepository
     @ObservationIgnored private let settingsStore: AppSettingsStore
     @ObservationIgnored private let presetStore: LyricStylePresetStore
@@ -235,7 +235,7 @@ final class AppModel {
     }
 
     init(
-        playbackService: SpotifyAppleScriptPlaybackService = SpotifyAppleScriptPlaybackService(),
+        playbackService: any PlaybackArtworkService = SpotifyAppleScriptPlaybackService(),
         lyricsRepository: LyricsRepository = LyricsRepository(),
         settingsStore: AppSettingsStore = AppSettingsStore(fileURL: AppModel.defaultSettingsStoreURL()),
         presetStore: LyricStylePresetStore = LyricStylePresetStore(fileURL: AppModel.defaultPresetStoreURL()),
@@ -298,19 +298,19 @@ final class AppModel {
 
     func playPause() {
         runPlayerCommand { service in
-            service.playPause()
+            await service.playPause()
         }
     }
 
     func nextTrack() {
         runPlayerCommand { service in
-            service.nextTrack()
+            await service.nextTrack()
         }
     }
 
     func previousTrack() {
         runPlayerCommand { service in
-            service.previousTrack()
+            await service.previousTrack()
         }
     }
 
@@ -358,10 +358,7 @@ final class AppModel {
 
 
     private func pollOnce() async {
-        let service = playbackService
-        let snapshot = await Task.detached {
-            service.currentSnapshot()
-        }.value
+        let snapshot = await playbackService.currentSnapshot()
 
         playback = snapshot
         playbackUpdatedAt = Date()
@@ -622,12 +619,12 @@ final class AppModel {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    private func runPlayerCommand(_ command: @escaping @Sendable (SpotifyAppleScriptPlaybackService) -> Void) {
+    private func runPlayerCommand(
+        _ command: @escaping @Sendable (any PlaybackArtworkService) async -> Void
+    ) {
         let service = playbackService
         Task { [weak self] in
-            await Task.detached {
-                command(service)
-            }.value
+            await command(service)
             try? await Task.sleep(nanoseconds: 300_000_000)
             await self?.pollOnce()
         }

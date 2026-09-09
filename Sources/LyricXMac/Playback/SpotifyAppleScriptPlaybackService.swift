@@ -23,12 +23,15 @@ public struct SpotifyAppleScriptPlaybackService: Sendable {
         self.fetchArtwork = fetchArtwork
     }
 
-    public func currentSnapshot() -> PlaybackSnapshot {
-        do {
-            return try Self.parse(output: runScript(Self.spotifyScript))
-        } catch {
-            return PlaybackSnapshot(state: .unavailable, message: error.localizedDescription)
-        }
+    public func currentSnapshot() async -> PlaybackSnapshot {
+        let runScript = runScript
+        return await Task.detached {
+            do {
+                return try Self.parse(output: runScript(Self.spotifyScript))
+            } catch {
+                return PlaybackSnapshot(state: .unavailable, message: error.localizedDescription)
+            }
+        }.value
     }
 
     static func parse(output: String) -> PlaybackSnapshot {
@@ -127,16 +130,16 @@ public struct SpotifyAppleScriptPlaybackService: Sendable {
 }
 
 extension SpotifyAppleScriptPlaybackService: PlaybackArtworkService {
-    public func playPause() {
-        runCommand(.playPause)
+    public func playPause() async {
+        await runCommand(.playPause)
     }
 
-    public func nextTrack() {
-        runCommand(.nextTrack)
+    public func nextTrack() async {
+        await runCommand(.nextTrack)
     }
 
-    public func previousTrack() {
-        runCommand(.previousTrack)
+    public func previousTrack() async {
+        await runCommand(.previousTrack)
     }
 
     public func artwork(for track: PlaybackTrack) async -> TrackArtwork? {
@@ -152,8 +155,11 @@ extension SpotifyAppleScriptPlaybackService: PlaybackArtworkService {
         }
     }
 
-    private func runCommand(_ command: SpotifyAppleScriptPlayerCommand) {
-        _ = try? runScript(command.appleScript)
+    private func runCommand(_ command: SpotifyAppleScriptPlayerCommand) async {
+        let runScript = runScript
+        await Task.detached {
+            _ = try? runScript(command.appleScript)
+        }.value
     }
 }
 
