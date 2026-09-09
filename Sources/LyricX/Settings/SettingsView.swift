@@ -160,7 +160,11 @@ struct SettingsView: View {
                 )
             }
 
-            if let detail = model.spotifyConnectionStatus.detail {
+            if let deviceName = model.spotifyActiveDeviceName {
+                LabeledContent("Active Device", value: deviceName)
+            }
+
+            if let detail = model.spotifyConnectionStatus.detail ?? model.spotifyPlaybackStatus {
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)

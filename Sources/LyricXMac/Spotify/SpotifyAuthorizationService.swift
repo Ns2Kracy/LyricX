@@ -104,9 +104,7 @@ public actor SpotifyAuthorizationService {
     public static let scopes = [
         "streaming",
         "user-modify-playback-state",
-        "user-read-email",
-        "user-read-playback-state",
-        "user-read-private"
+        "user-read-playback-state"
     ]
 
     private let configuration: SpotifyConfiguration
@@ -168,7 +166,7 @@ public actor SpotifyAuthorizationService {
             return false
         }
         refreshToken = storedRefreshToken
-        _ = try await refreshAccessToken(using: storedRefreshToken)
+        _ = try await requestRefreshedAccessToken(using: storedRefreshToken)
         return true
     }
 
@@ -184,7 +182,19 @@ public actor SpotifyAuthorizationService {
         guard let availableRefreshToken else {
             throw SpotifyAuthorizationError.notConnected
         }
-        return try await refreshAccessToken(using: availableRefreshToken)
+        return try await requestRefreshedAccessToken(using: availableRefreshToken)
+    }
+
+    public func refreshAccessToken() async throws -> SpotifyAccessToken {
+        let availableRefreshToken = if let refreshToken {
+            refreshToken
+        } else {
+            try tokenStore.load()
+        }
+        guard let availableRefreshToken else {
+            throw SpotifyAuthorizationError.notConnected
+        }
+        return try await requestRefreshedAccessToken(using: availableRefreshToken)
     }
 
     public func disconnect() throws {
@@ -214,7 +224,7 @@ public actor SpotifyAuthorizationService {
         return url
     }
 
-    private func refreshAccessToken(using refreshToken: String) async throws -> SpotifyAccessToken {
+    private func requestRefreshedAccessToken(using refreshToken: String) async throws -> SpotifyAccessToken {
         let response = try await tokenRequest([
             URLQueryItem(name: "grant_type", value: "refresh_token"),
             URLQueryItem(name: "refresh_token", value: refreshToken),

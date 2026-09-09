@@ -24,8 +24,11 @@ final class AppModel {
     var spotifyConnectionStatus: SpotifyConnectionStatus = .unavailable(
         "Set SPOTIFY_CLIENT_ID when building LyricX"
     )
+    var spotifyActiveDeviceName: String?
+    var spotifyPlaybackStatus: String?
 
     @ObservationIgnored private let playbackService: any PlaybackArtworkService
+    @ObservationIgnored private let spotifyPlaybackCoordinator: SpotifyPlaybackCoordinator?
     @ObservationIgnored private let spotifyAuthorizationService: SpotifyAuthorizationService?
     @ObservationIgnored private let lyricsRepository: LyricsRepository
     @ObservationIgnored private let settingsStore: AppSettingsStore
@@ -240,7 +243,7 @@ final class AppModel {
     }
 
     init(
-        playbackService: any PlaybackArtworkService = SpotifyAppleScriptPlaybackService(),
+        playbackService: (any PlaybackArtworkService)? = nil,
         spotifyAuthorizationService: SpotifyAuthorizationService? = AppModel.defaultSpotifyAuthorizationService(),
         lyricsRepository: LyricsRepository = LyricsRepository(),
         settingsStore: AppSettingsStore = AppSettingsStore(fileURL: AppModel.defaultSettingsStoreURL()),
@@ -254,8 +257,17 @@ final class AppModel {
         translationCache: LyricTranslationCache = LyricTranslationCache(),
         startsPolling: Bool = true
     ) {
-        self.playbackService = playbackService
         self.spotifyAuthorizationService = spotifyAuthorizationService
+        if let playbackService {
+            self.playbackService = playbackService
+            self.spotifyPlaybackCoordinator = nil
+        } else {
+            let coordinator = SpotifyPlaybackCoordinator(
+                authorizationService: spotifyAuthorizationService
+            )
+            self.playbackService = coordinator
+            self.spotifyPlaybackCoordinator = coordinator
+        }
         self.lyricsRepository = lyricsRepository
         self.settingsStore = settingsStore
         self.presetStore = presetStore
@@ -332,13 +344,15 @@ final class AppModel {
         }
 
         spotifyConnectionStatus = .connecting
-        Task { [weak self, service] in
+        let coordinator = spotifyPlaybackCoordinator
+        Task { [weak self, service, coordinator] in
             do {
                 _ = try await service.connect { url in
                     await MainActor.run {
                         NSWorkspace.shared.open(url)
                     }
                 }
+                await coordinator?.setSpotifyConnected(true)
                 self?.spotifyConnectionStatus = .connected
             } catch {
                 self?.spotifyConnectionStatus = .failed(error.localizedDescription)
@@ -351,13 +365,17 @@ final class AppModel {
             return
         }
 
-        Task { [weak self, service] in
+        let coordinator = spotifyPlaybackCoordinator
+        Task { [weak self, service, coordinator] in
             do {
                 try await service.disconnect()
                 self?.spotifyConnectionStatus = .disconnected
             } catch {
                 self?.spotifyConnectionStatus = .failed(error.localizedDescription)
             }
+            await coordinator?.setSpotifyConnected(false)
+            self?.spotifyActiveDeviceName = nil
+            self?.spotifyPlaybackStatus = nil
         }
     }
 
@@ -407,6 +425,13 @@ final class AppModel {
     private func pollOnce() async {
         let snapshot = await playbackService.currentSnapshot()
 
+        if let coordinator = spotifyPlaybackCoordinator {
+            spotifyActiveDeviceName = await coordinator.currentDevice()?.name
+            spotifyPlaybackStatus = await coordinator.statusMessage()
+            if spotifyConnectionStatus.isConnected, await !coordinator.spotifyConnected() {
+                spotifyConnectionStatus = .failed("Spotify session expired. Connect again to use Spotify Connect.")
+            }
+        }
         playback = snapshot
         playbackUpdatedAt = Date()
 
@@ -713,10 +738,14 @@ final class AppModel {
             return
         }
 
-        Task { [weak self, service] in
+        let coordinator = spotifyPlaybackCoordinator
+        Task { [weak self, service, coordinator] in
             do {
-                self?.spotifyConnectionStatus = try await service.restore() ? .connected : .disconnected
+                let restored = try await service.restore()
+                await coordinator?.setSpotifyConnected(restored)
+                self?.spotifyConnectionStatus = restored ? .connected : .disconnected
             } catch {
+                await coordinator?.setSpotifyConnected(false)
                 self?.spotifyConnectionStatus = .failed(error.localizedDescription)
             }
         }

@@ -35,6 +35,13 @@ struct MainWindowView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
+                    if let deviceName = model.spotifyActiveDeviceName {
+                        Label(deviceName, systemImage: "hifispeaker")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
                     Spacer()
 
                     Button {
