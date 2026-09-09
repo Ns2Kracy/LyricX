@@ -25,6 +25,8 @@ jobs:
         run: swift run LyricXUnitTests
 
       - name: Build app bundle
+        env:
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
         run: bash scripts/build-app.sh
 
       - name: Package release assets
@@ -33,4 +35,8 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/LyricX.zip dist/LyricX.zip.sha256 --generate-notes
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            dist/LyricX.zip \
+            dist/LyricX.zip.sha256 \
+            --generate-notes

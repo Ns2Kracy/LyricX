@@ -112,6 +112,8 @@ public actor SpotifyAuthorizationService {
     private let session: URLSession
     private var currentToken: SpotifyAccessToken?
     private var refreshToken: String?
+    private var refreshTask: Task<SpotifyTokenResponse, Error>?
+    private var sessionGeneration: UInt = 0
 
     public init(
         configuration: SpotifyConfiguration,
@@ -126,6 +128,7 @@ public actor SpotifyAuthorizationService {
     public func connect(
         openURL: @escaping @Sendable (URL) async -> Bool
     ) async throws -> SpotifyAccessToken {
+        let generation = sessionGeneration
         let pkce = try SpotifyPKCE.generate()
         let server = try SpotifyLoopbackCallbackServer(
             path: configuration.redirectPath,
@@ -151,13 +154,19 @@ public actor SpotifyAuthorizationService {
             throw SpotifyAuthorizationError.missingAuthorizationCode
         }
 
-        let response = try await tokenRequest([
+        guard generation == sessionGeneration else {
+            throw SpotifyAuthorizationError.notConnected
+        }
+        let response = try await Self.tokenRequest([
             URLQueryItem(name: "client_id", value: configuration.clientID),
             URLQueryItem(name: "grant_type", value: "authorization_code"),
             URLQueryItem(name: "code", value: code),
             URLQueryItem(name: "redirect_uri", value: redirectURI.absoluteString),
             URLQueryItem(name: "code_verifier", value: pkce.verifier)
-        ])
+        ], session: session)
+        guard generation == sessionGeneration else {
+            throw SpotifyAuthorizationError.notConnected
+        }
         return try accept(response: response, existingRefreshToken: nil)
     }
 
@@ -198,6 +207,9 @@ public actor SpotifyAuthorizationService {
     }
 
     public func disconnect() throws {
+        sessionGeneration &+= 1
+        refreshTask?.cancel()
+        refreshTask = nil
         currentToken = nil
         refreshToken = nil
         try tokenStore.delete()
@@ -225,11 +237,42 @@ public actor SpotifyAuthorizationService {
     }
 
     private func requestRefreshedAccessToken(using refreshToken: String) async throws -> SpotifyAccessToken {
-        let response = try await tokenRequest([
-            URLQueryItem(name: "grant_type", value: "refresh_token"),
-            URLQueryItem(name: "refresh_token", value: refreshToken),
-            URLQueryItem(name: "client_id", value: configuration.clientID)
-        ])
+        let generation = sessionGeneration
+        let response: SpotifyTokenResponse
+        if let refreshTask {
+            do {
+                response = try await refreshTask.value
+            } catch {
+                if generation != sessionGeneration {
+                    throw SpotifyAuthorizationError.notConnected
+                }
+                throw error
+            }
+        } else {
+            let form = [
+                URLQueryItem(name: "grant_type", value: "refresh_token"),
+                URLQueryItem(name: "refresh_token", value: refreshToken),
+                URLQueryItem(name: "client_id", value: configuration.clientID)
+            ]
+            let session = session
+            let task = Task {
+                try await Self.tokenRequest(form, session: session)
+            }
+            refreshTask = task
+            do {
+                response = try await task.value
+            } catch {
+                refreshTask = nil
+                if generation != sessionGeneration {
+                    throw SpotifyAuthorizationError.notConnected
+                }
+                throw error
+            }
+            refreshTask = nil
+        }
+        guard generation == sessionGeneration else {
+            throw SpotifyAuthorizationError.notConnected
+        }
         return try accept(response: response, existingRefreshToken: refreshToken)
     }
 
@@ -260,7 +303,10 @@ public actor SpotifyAuthorizationService {
         return token
     }
 
-    private func tokenRequest(_ form: [URLQueryItem]) async throws -> SpotifyTokenResponse {
+    private nonisolated static func tokenRequest(
+        _ form: [URLQueryItem],
+        session: URLSession
+    ) async throws -> SpotifyTokenResponse {
         guard let url = URL(string: "https://accounts.spotify.com/api/token") else {
             throw SpotifyAuthorizationError.invalidTokenURL
         }
@@ -332,7 +378,7 @@ public enum SpotifyAuthorizationError: LocalizedError, Equatable {
     }
 }
 
-private struct SpotifyTokenResponse: Decodable {
+private struct SpotifyTokenResponse: Decodable, Sendable {
     let accessToken: String
     let expiresIn: Int
     let refreshToken: String?
@@ -416,41 +462,61 @@ private final class SpotifyLoopbackCallbackServer: @unchecked Sendable {
 
     private func handle(connection: NWConnection) {
         connection.start(queue: queue)
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 16_384) { [weak self] data, _, _, error in
+        receiveRequest(from: connection, accumulated: Data())
+    }
+
+    private func receiveRequest(from connection: NWConnection, accumulated: Data) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 4_096) { [weak self] data, _, isComplete, error in
             guard let self else { return }
-            guard error == nil, let data, let request = String(data: data, encoding: .utf8),
-                  let requestTarget = Self.requestTarget(from: request),
-                  let components = URLComponents(string: "http://127.0.0.1\(requestTarget)"),
-                  components.path == self.path else {
+            var requestData = accumulated
+            if let data {
+                requestData.append(data)
+            }
+            guard error == nil, requestData.count <= 16_384 else {
                 self.respond(to: connection, success: false)
                 return
             }
-
-            var parameters: [String: String] = [:]
-            for item in components.queryItems ?? [] {
-                guard parameters.updateValue(item.value ?? "", forKey: item.name) == nil else {
-                    self.respond(to: connection, success: false)
-                    return
-                }
-            }
-            guard parameters["state"] == self.expectedState else {
+            if requestData.range(of: Data("\r\n\r\n".utf8)) != nil
+                || requestData.range(of: Data("\n\n".utf8)) != nil {
+                self.process(requestData: requestData, from: connection)
+            } else if isComplete {
                 self.respond(to: connection, success: false)
-                return
+            } else {
+                self.receiveRequest(from: connection, accumulated: requestData)
             }
-
-            let code = parameters["code"]
-            let authorizationError = parameters["error"]
-            guard (code?.isEmpty == false) != (authorizationError?.isEmpty == false) else {
-                self.respond(to: connection, success: false)
-                return
-            }
-
-            self.callback.resolve(.success(SpotifyOAuthCallback(
-                code: code,
-                error: authorizationError
-            )))
-            self.respond(to: connection, success: true)
         }
+    }
+
+    private func process(requestData: Data, from connection: NWConnection) {
+        guard let request = String(data: requestData, encoding: .utf8),
+              let requestTarget = Self.requestTarget(from: request),
+              let components = URLComponents(string: "http://127.0.0.1\(requestTarget)"),
+              components.path == path else {
+            respond(to: connection, success: false)
+            return
+        }
+
+        var parameters: [String: String] = [:]
+        for item in components.queryItems ?? [] {
+            guard parameters.updateValue(item.value ?? "", forKey: item.name) == nil else {
+                respond(to: connection, success: false)
+                return
+            }
+        }
+        guard parameters["state"] == expectedState else {
+            respond(to: connection, success: false)
+            return
+        }
+
+        let code = parameters["code"]
+        let authorizationError = parameters["error"]
+        guard (code?.isEmpty == false) != (authorizationError?.isEmpty == false) else {
+            respond(to: connection, success: false)
+            return
+        }
+
+        callback.resolve(.success(SpotifyOAuthCallback(code: code, error: authorizationError)))
+        respond(to: connection, success: true)
     }
 
     private func respond(to connection: NWConnection, success: Bool) {

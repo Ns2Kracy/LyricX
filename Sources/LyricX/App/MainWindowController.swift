@@ -11,6 +11,13 @@ final class MainWindowController {
         self.model = model
     }
 
+    func prepareForPlayback() {
+        guard window == nil else {
+            return
+        }
+        window = makeWindow()
+    }
+
     func showWindow() {
         let window = window ?? makeWindow()
         self.window = window

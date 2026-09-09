@@ -83,6 +83,7 @@ public enum SpotifyWebPlaybackEvent: Equatable, Sendable {
     case offline
     case stateChanged(SpotifyWebPlaybackState?)
     case autoplayFailed
+    case warning(String)
     case failed(String)
 }
 
@@ -94,6 +95,8 @@ public final class SpotifyWebPlaybackService: NSObject {
 
     private let authorizationService: SpotifyAuthorizationService
     private let messageProxy: SpotifyWebPlaybackMessageProxy
+    private var isSessionActive = false
+    private var tokenGeneration: UInt = 0
 
     public init(authorizationService: SpotifyAuthorizationService) {
         self.authorizationService = authorizationService
@@ -110,14 +113,17 @@ public final class SpotifyWebPlaybackService: NSObject {
         super.init()
 
         messageProxy.delegate = self
+        playerView.navigationDelegate = self
     }
 
     public func start() {
         switch status {
         case .idle, .failed:
+            beginSession()
             status = .loading
             playerView.loadHTMLString(Self.playerHTML, baseURL: URL(string: "https://sdk.scdn.co"))
         case .offline:
+            beginSession()
             status = .loading
             Task { [weak self] in
                 do {
@@ -133,6 +139,8 @@ public final class SpotifyWebPlaybackService: NSObject {
     }
 
     public func disconnect() async {
+        isSessionActive = false
+        tokenGeneration &+= 1
         try? await command("disconnect")
         status = .idle
     }
@@ -153,6 +161,11 @@ public final class SpotifyWebPlaybackService: NSObject {
         try await command("previousTrack")
     }
 
+    private func beginSession() {
+        isSessionActive = true
+        tokenGeneration &+= 1
+    }
+
     private func command(_ name: String) async throws {
         _ = try await playerView.callAsyncJavaScript(
             "return await window.lyricXCommand(command);",
@@ -163,12 +176,22 @@ public final class SpotifyWebPlaybackService: NSObject {
     }
 
     private func deliverToken(requestID: String) {
+        guard isSessionActive else {
+            return
+        }
+        let generation = tokenGeneration
         Task { [weak self, authorizationService] in
             do {
                 let token = try await authorizationService.accessToken()
-                try await self?.sendToken(requestID: requestID, token: token.value, error: nil)
+                guard let self, self.isSessionActive, self.tokenGeneration == generation else {
+                    return
+                }
+                try await self.sendToken(requestID: requestID, token: token.value, error: nil)
             } catch {
-                try? await self?.sendToken(
+                guard let self, self.isSessionActive, self.tokenGeneration == generation else {
+                    return
+                }
+                try? await self.sendToken(
                     requestID: requestID,
                     token: nil,
                     error: error.localizedDescription
@@ -191,7 +214,9 @@ public final class SpotifyWebPlaybackService: NSObject {
     }
 
     private func receiveEvent(_ body: Any) {
-        guard let payload = body as? [String: Any], let type = payload["type"] as? String else {
+        guard isSessionActive,
+              let payload = body as? [String: Any],
+              let type = payload["type"] as? String else {
             return
         }
 
@@ -212,7 +237,7 @@ public final class SpotifyWebPlaybackService: NSObject {
             event = .autoplayFailed
         case "warning":
             let message = (payload["message"] as? String) ?? "Spotify playback failed"
-            event = .failed(message)
+            event = .warning(message)
         case "error":
             let message = (payload["message"] as? String) ?? "Spotify Web Playback failed"
             status = .failed(message)
@@ -358,8 +383,26 @@ public final class SpotifyWebPlaybackService: NSObject {
     """#
 }
 
+extension SpotifyWebPlaybackService: WKNavigationDelegate {
+    public func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationAction: WKNavigationAction
+    ) async -> WKNavigationActionPolicy {
+        if navigationAction.targetFrame?.isMainFrame == false {
+            return .allow
+        }
+        guard let url = navigationAction.request.url else {
+            return .cancel
+        }
+        if url.scheme == "about" || url.host == "sdk.scdn.co" {
+            return .allow
+        }
+        return .cancel
+    }
+}
+
 private protocol SpotifyWebPlaybackMessageDelegate: AnyObject {
-    @MainActor func receiveSpotifyMessage(name: String, body: Any)
+    @MainActor func receiveSpotifyMessage(_ message: WKScriptMessage)
 }
 
 private final class SpotifyWebPlaybackMessageProxy: NSObject, WKScriptMessageHandler {
@@ -369,21 +412,26 @@ private final class SpotifyWebPlaybackMessageProxy: NSObject, WKScriptMessageHan
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
-        delegate?.receiveSpotifyMessage(name: message.name, body: message.body)
+        delegate?.receiveSpotifyMessage(message)
     }
 }
 
 extension SpotifyWebPlaybackService: SpotifyWebPlaybackMessageDelegate {
-    fileprivate func receiveSpotifyMessage(name: String, body: Any) {
-        switch name {
+    fileprivate func receiveSpotifyMessage(_ message: WKScriptMessage) {
+        guard isSessionActive,
+              message.webView === playerView,
+              message.frameInfo.isMainFrame else {
+            return
+        }
+        switch message.name {
         case "spotifyToken":
-            guard let payload = body as? [String: Any],
+            guard let payload = message.body as? [String: Any],
                   let requestID = payload["requestID"] as? String else {
                 return
             }
             deliverToken(requestID: requestID)
         case "spotifyEvent":
-            receiveEvent(body)
+            receiveEvent(message.body)
         default:
             break
         }

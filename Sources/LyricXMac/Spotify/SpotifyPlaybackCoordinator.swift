@@ -86,8 +86,12 @@ public actor SpotifyPlaybackCoordinator: PlaybackArtworkService {
             embeddedUpdatedAt = Date()
             embeddedSnapshot = state.map(Self.snapshot(from:))
         case .autoplayFailed:
+            usesEmbeddedPlayback = false
             lastErrorMessage = "Spotify blocked automatic playback. Try Listen in LyricX again."
+        case .warning(let message):
+            lastErrorMessage = message
         case .failed(let message):
+            usesEmbeddedPlayback = false
             lastErrorMessage = message
         }
     }
@@ -265,7 +269,11 @@ public actor SpotifyPlaybackCoordinator: PlaybackArtworkService {
 
     private func preferredSnapshot(at date: Date) -> PlaybackSnapshot? {
         if usesEmbeddedPlayback, let embeddedSnapshot {
-            return Self.estimatedSnapshot(embeddedSnapshot, updatedAt: embeddedUpdatedAt, at: date)
+            let snapshot = Self.mergingMetadata(
+                into: embeddedSnapshot,
+                from: cachedContext?.snapshot
+            )
+            return Self.estimatedSnapshot(snapshot, updatedAt: embeddedUpdatedAt, at: date)
         }
         guard let snapshot = cachedContext?.snapshot else {
             return nil
@@ -288,6 +296,37 @@ public actor SpotifyPlaybackCoordinator: PlaybackArtworkService {
             track: snapshot.track,
             position: position,
             message: snapshot.message
+        )
+    }
+
+    private static func mergingMetadata(
+        into embedded: PlaybackSnapshot,
+        from apiSnapshot: PlaybackSnapshot?
+    ) -> PlaybackSnapshot {
+        guard let embeddedTrack = embedded.track,
+              let apiTrack = apiSnapshot?.track else {
+            return embedded
+        }
+        let matchingURI = embeddedTrack.sourceURI.map { $0 == apiTrack.sourceURI } ?? false
+        let matchingID = embeddedTrack.sourceID.map { $0 == apiTrack.sourceID } ?? false
+        guard matchingURI || matchingID else {
+            return embedded
+        }
+        let track = PlaybackTrack(
+            title: embeddedTrack.title,
+            artist: embeddedTrack.artist,
+            album: embeddedTrack.album ?? apiTrack.album,
+            duration: embeddedTrack.duration ?? apiTrack.duration,
+            artworkURL: embeddedTrack.artworkURL ?? apiTrack.artworkURL,
+            sourceID: embeddedTrack.sourceID ?? apiTrack.sourceID,
+            sourceURI: embeddedTrack.sourceURI ?? apiTrack.sourceURI,
+            isrc: apiTrack.isrc
+        )
+        return PlaybackSnapshot(
+            state: embedded.state,
+            track: track,
+            position: embedded.position,
+            message: embedded.message
         )
     }
 

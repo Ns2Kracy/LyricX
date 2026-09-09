@@ -9,6 +9,7 @@ final class AppContainer {
     init() {
         let model = AppModel()
         let mainWindowController = MainWindowController(model: model)
+        mainWindowController.prepareForPlayback()
 
         self.model = model
         self.mainWindowController = mainWindowController

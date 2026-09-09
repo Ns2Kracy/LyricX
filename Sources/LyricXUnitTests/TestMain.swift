@@ -8,6 +8,7 @@ struct LyricXUnitTests {
     static func main() async throws {
         try runCoreTests()
         try await runPlaybackAndMenuBarTests()
+        try await runSpotifyIntegrationTests()
         try await runTranslationTests()
         try await runSettingsAndUpdateTests()
         print("LyricXUnitTests passed")
@@ -83,6 +84,21 @@ struct LyricXUnitTests {
         try testMenuBarDisplayTextAlternatesOriginalThenRomaji()
         try testMenuBarDisplayTextFallsBackToOriginalWhenRomajiMissing()
         try testMenuBarDisplayTextKeepsSourceWhenTranslationFailed()
+    }
+
+    private static func runSpotifyIntegrationTests() async throws {
+        try testSpotifyPKCEUsesSHA256Challenge()
+        try testSpotifyAuthorizationURLRequestsPlaybackScopes()
+        try await testSpotifyAuthorizationDeduplicatesConcurrentRefresh()
+        try await testSpotifyDisconnectRejectsLateRefreshResponse()
+        try await testSpotifyWebAPIDecodesMetadataAndTransfersPlayback()
+        try await testSpotifyWebAPIRetries401AndHandlesNoPlayback()
+        try await testSpotifyWebAPIHonorsRetryAfter()
+        try await testMusicBrainzEnrichmentUsesISRC()
+        try await testLRCLIBRetriesWithNormalizedSpotifyMetadata()
+        try await testLRCLIBRejectsUnrelatedArtist()
+        try await testLRCLIBRejectsWrongVersionDuration()
+        try await testLyricsRepositoryRetriesCanonicalMetadata()
     }
 
     private static func runTranslationTests() async throws {

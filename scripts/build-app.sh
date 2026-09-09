@@ -26,7 +26,7 @@ if [[ -n "${SPOTIFY_CLIENT_ID:-}" ]]; then
     /usr/libexec/PlistBuddy -c "Set :SpotifyClientID $SPOTIFY_CLIENT_ID" "$CONTENTS_DIR/Info.plist"
 fi
 
-printf 'APPL????' > "$CONTENTS_DIR/PkgInfo"
+printf 'APPL????' >"$CONTENTS_DIR/PkgInfo"
 chmod +x "$MACOS_DIR/$APP_NAME"
 
 printf '%s\n' "Built $APP_DIR"

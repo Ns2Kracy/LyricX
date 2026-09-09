@@ -29,6 +29,8 @@ jobs:
         run: swift build
 
       - name: Build app bundle
+        env:
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
         run: bash scripts/build-app.sh
 
       - name: Package app artifact

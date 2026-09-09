@@ -314,7 +314,7 @@ final class AppModel {
             spotifyConnectionStatus = .disconnected
         }
         let coordinator = spotifyPlaybackCoordinator
-        spotifyWebPlaybackService?.onEvent = { [weak self, coordinator] event in
+        spotifyWebPlaybackService?.onEvent = { [weak self, weak coordinator] event in
             self?.handleSpotifyWebPlaybackEvent(event)
             Task {
                 await coordinator?.receiveWebPlaybackEvent(event)
@@ -831,15 +831,14 @@ final class AppModel {
         case .offline:
             spotifyWebPlaybackStatus = .offline
             spotifyIsPlayingInLyricX = false
+        case .warning(let message):
+            spotifyPlaybackStatus = message
         case .failed(let message):
-            if case .ready = spotifyWebPlaybackService?.status {
-                spotifyPlaybackStatus = message
-            } else {
-                spotifyWebPlaybackStatus = .failed(message)
-                spotifyIsPlayingInLyricX = false
-            }
+            spotifyWebPlaybackStatus = .failed(message)
+            spotifyIsPlayingInLyricX = false
         case .autoplayFailed:
-            spotifyWebPlaybackStatus = .failed("Playback was blocked. Try Listen in LyricX again.")
+            spotifyPlaybackStatus = "Playback was blocked. Try Listen in LyricX again."
+            spotifyIsPlayingInLyricX = false
         case .stateChanged:
             break
         }

@@ -200,7 +200,9 @@ final class MenuBarStatusItemController: NSObject, NSPopoverDelegate {
         }
 
         statusView.update(presentation: presentation, artwork: artwork, date: date)
-        statusItem.length = statusView.intrinsicContentSize.width
+        if !popover.isShown {
+            statusItem.length = statusView.intrinsicContentSize.width
+        }
         if let button = statusItem.button {
             statusView.frame = button.bounds
         }
