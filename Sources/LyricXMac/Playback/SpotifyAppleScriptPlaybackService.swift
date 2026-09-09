@@ -1,7 +1,7 @@
 import Foundation
 import LyricXCore
 
-public struct SpotifyAppleScriptPlaybackService: Sendable {
+public struct SpotifyAppleScriptPlaybackService: PlaybackArtworkService, Sendable {
     private let runScript: @Sendable (String) throws -> String
     private let fetchArtwork: @Sendable (URL) async throws -> (Data, String?)
 
@@ -129,7 +129,7 @@ public struct SpotifyAppleScriptPlaybackService: Sendable {
     """
 }
 
-extension SpotifyAppleScriptPlaybackService: PlaybackArtworkService {
+extension SpotifyAppleScriptPlaybackService {
     public func playPause() async {
         await runCommand(.playPause)
     }
