@@ -392,12 +392,12 @@ private struct SpotifyTokenResponse: Decodable, Sendable {
     }
 }
 
-private struct SpotifyOAuthCallback: Sendable {
+struct SpotifyOAuthCallback: Sendable {
     let code: String?
     let error: String?
 }
 
-private final class SpotifyLoopbackCallbackServer: @unchecked Sendable {
+final class SpotifyLoopbackCallbackServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.lyricx.spotify-oauth-callback")
     private let listener: NWListener
     private let path: String
@@ -405,8 +405,12 @@ private final class SpotifyLoopbackCallbackServer: @unchecked Sendable {
     private let ready = OneShot<URL>()
     private let callback = OneShot<SpotifyOAuthCallback>()
 
-    init(path: String, expectedState: String) throws {
-        guard let port = NWEndpoint.Port(rawValue: SpotifyConfiguration.redirectPort) else {
+    init(
+        path: String,
+        expectedState: String,
+        port: UInt16 = SpotifyConfiguration.redirectPort
+    ) throws {
+        guard let port = NWEndpoint.Port(rawValue: port) else {
             throw SpotifyAuthorizationError.callbackFailed
         }
         let parameters = NWParameters.tcp
@@ -475,15 +479,23 @@ private final class SpotifyLoopbackCallbackServer: @unchecked Sendable {
             if let data {
                 requestData.append(data)
             }
-            guard error == nil, requestData.count <= 16_384 else {
-                self.respond(to: connection, success: false)
+            guard error == nil, requestData.count <= 131_072 else {
+                self.respond(
+                    to: connection,
+                    success: false,
+                    failureMessage: "The local callback request was too large or ended unexpectedly. Return to LyricX and try again."
+                )
                 return
             }
             if requestData.range(of: Data("\r\n\r\n".utf8)) != nil
                 || requestData.range(of: Data("\n\n".utf8)) != nil {
                 self.process(requestData: requestData, from: connection)
             } else if isComplete {
-                self.respond(to: connection, success: false)
+                self.respond(
+                    to: connection,
+                    success: false,
+                    failureMessage: "Spotify returned an incomplete callback request. Return to LyricX and try again."
+                )
             } else {
                 self.receiveRequest(from: connection, accumulated: requestData)
             }
@@ -491,30 +503,47 @@ private final class SpotifyLoopbackCallbackServer: @unchecked Sendable {
     }
 
     private func process(requestData: Data, from connection: NWConnection) {
-        guard let request = String(data: requestData, encoding: .utf8),
-              let requestTarget = Self.requestTarget(from: request),
-              let components = URLComponents(string: "http://127.0.0.1\(requestTarget)"),
+        guard let lineEnd = requestData.firstIndex(of: 0x0A),
+              let requestLine = String(data: requestData[..<lineEnd], encoding: .utf8),
+              let requestTarget = Self.requestTarget(from: requestLine),
+              let components = Self.requestComponents(from: requestTarget),
               components.path == path else {
-            respond(to: connection, success: false)
+            respond(
+                to: connection,
+                success: false,
+                failureMessage: "Spotify returned to the wrong callback path. Check the redirect URI in Spotify Dashboard."
+            )
             return
         }
 
         var parameters: [String: String] = [:]
         for item in components.queryItems ?? [] {
             guard parameters.updateValue(item.value ?? "", forKey: item.name) == nil else {
-                respond(to: connection, success: false)
+                respond(
+                    to: connection,
+                    success: false,
+                    failureMessage: "Spotify returned duplicate callback parameters. Return to LyricX and try again."
+                )
                 return
             }
         }
         guard parameters["state"] == expectedState else {
-            respond(to: connection, success: false)
+            respond(
+                to: connection,
+                success: false,
+                failureMessage: "The authorization state did not match. Close older Spotify authorization tabs and try again."
+            )
             return
         }
 
         let code = parameters["code"]
         let authorizationError = parameters["error"]
         guard (code?.isEmpty == false) != (authorizationError?.isEmpty == false) else {
-            respond(to: connection, success: false)
+            respond(
+                to: connection,
+                success: false,
+                failureMessage: "Spotify did not return an authorization result. Return to LyricX and try again."
+            )
             return
         }
 
@@ -522,16 +551,33 @@ private final class SpotifyLoopbackCallbackServer: @unchecked Sendable {
         respond(to: connection, success: true)
     }
 
-    private func respond(to connection: NWConnection, success: Bool) {
+    private func respond(
+        to connection: NWConnection,
+        success: Bool,
+        failureMessage: String = "Spotify could not be connected. Return to LyricX and try again."
+    ) {
         let status = success ? "200 OK" : "400 Bad Request"
         let message = success
             ? "Spotify authorization finished. You can close this window and return to LyricX."
-            : "Spotify could not be connected. Return to LyricX and try again."
+            : failureMessage
         let body = "<html><body><p>\(message)</p></body></html>"
         let response = "HTTP/1.1 \(status)\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
         connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in
             connection.cancel()
         })
+    }
+
+    private static func requestComponents(from requestTarget: String) -> URLComponents? {
+        if requestTarget.hasPrefix("/") {
+            return URLComponents(string: "http://127.0.0.1" + requestTarget)
+        }
+        guard let components = URLComponents(string: requestTarget),
+              components.scheme == "http",
+              components.host == "127.0.0.1",
+              components.port == Int(SpotifyConfiguration.redirectPort) else {
+            return nil
+        }
+        return components
     }
 
     private static func requestTarget(from request: String) -> String? {

@@ -89,6 +89,7 @@ struct LyricXUnitTests {
     private static func runSpotifyIntegrationTests() async throws {
         try testSpotifyPKCEUsesSHA256Challenge()
         try testSpotifyAuthorizationURLRequestsPlaybackScopes()
+        try await testSpotifyLoopbackCallbackAcceptsLargeBrowserHeaders()
         try await testSpotifyAuthorizationDeduplicatesConcurrentRefresh()
         try await testSpotifyDisconnectRejectsLateRefreshResponse()
         try await testSpotifyWebAPIDecodesMetadataAndTransfersPlayback()

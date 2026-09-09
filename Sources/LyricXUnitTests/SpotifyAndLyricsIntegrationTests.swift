@@ -1,6 +1,6 @@
 import Foundation
 import LyricXCore
-import LyricXMac
+@testable import LyricXMac
 
 extension LyricXUnitTests {
     static func testSpotifyPKCEUsesSHA256Challenge() throws {
@@ -43,6 +43,43 @@ extension LyricXUnitTests {
             SpotifyAuthorizationService.scopes,
             ["streaming", "user-modify-playback-state", "user-read-playback-state"]
         )
+    }
+
+    static func testSpotifyLoopbackCallbackAcceptsLargeBrowserHeaders() async throws {
+        let server: SpotifyLoopbackCallbackServer = try SpotifyLoopbackCallbackServer(
+            path: "/callback",
+            expectedState: "expected-state",
+            port: 0
+        )
+        let redirectURI = try await server.start()
+        defer { server.stop() }
+
+        var components = try require(
+            URLComponents(url: redirectURI, resolvingAgainstBaseURL: false),
+            "Callback URL should be parseable"
+        )
+        components.queryItems = [
+            URLQueryItem(name: "code", value: "authorization-code"),
+            URLQueryItem(name: "state", value: "expected-state")
+        ]
+        let callbackURL: URL = try require(components.url, "Callback URL should be valid")
+        var request = URLRequest(url: callbackURL)
+        request.setValue(
+            "local=" + String(repeating: "x", count: 20_000),
+            forHTTPHeaderField: "Cookie"
+        )
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        let callbackTask = Task {
+            try await server.waitForCallback(timeout: Duration.seconds(5))
+        }
+
+        let (_, response) = try await session.data(for: request)
+        let httpResponse = try require(response as? HTTPURLResponse, "Callback should return HTTP")
+        try expectEqual(httpResponse.statusCode, 200)
+        let callback: SpotifyOAuthCallback = try await callbackTask.value
+        try expectEqual(callback.code, "authorization-code")
+        try expectNil(callback.error)
     }
 
     static func testSpotifyAuthorizationDeduplicatesConcurrentRefresh() async throws {
