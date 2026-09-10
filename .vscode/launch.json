@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:LyricX}",
+            "name": "Debug LyricX",
+            "target": "LyricX",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug LyricX"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:LyricX}",
+            "name": "Release LyricX",
+            "target": "LyricX",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release LyricX"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:LyricX}",
+            "name": "Debug LyricXUnitTests",
+            "target": "LyricXUnitTests",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug LyricXUnitTests"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:LyricX}",
+            "name": "Release LyricXUnitTests",
+            "target": "LyricXUnitTests",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release LyricXUnitTests"
+        }
+    ]
+}
