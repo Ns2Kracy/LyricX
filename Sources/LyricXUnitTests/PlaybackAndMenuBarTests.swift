@@ -75,28 +75,6 @@ extension LyricXUnitTests {
     }
 
     @MainActor
-    static func testAppModelSelectsMenuBarArtworkOnlyWhenEnabled() throws {
-        let model = AppModel(
-            settingsStore: AppSettingsStore(
-                fileURL: temporaryFileURL(name: "menu-bar-artwork-selection-settings.json")
-            ),
-            presetStore: LyricStylePresetStore(
-                fileURL: temporaryFileURL(name: "menu-bar-artwork-selection-presets.json")
-            ),
-            startsPolling: false
-        )
-        let artwork = TrackArtwork(data: Data([0x01, 0x02]), mimeType: "image/test")
-
-        try expectNil(model.menuBarArtwork)
-
-        model.artwork = artwork
-        try expectEqual(model.menuBarArtwork, artwork)
-
-        model.showsMenuBarArtwork = false
-        try expectNil(model.menuBarArtwork)
-    }
-
-    @MainActor
     static func testAppModelSwitchesLyricWhenNextLineStarts() throws {
         let model = AppModel(
             settingsStore: AppSettingsStore(
@@ -203,8 +181,7 @@ extension LyricXUnitTests {
             maxViewportWidth: 180,
             contentWidth: 120,
             horizontalPadding: 8,
-            leadingAccessoryWidth: 0,
-            trailingAccessoryWidth: 0
+            leadingAccessoryWidth: 0
         )
 
         try expectEqual(layout.statusItemWidth, 136)
@@ -217,41 +194,12 @@ extension LyricXUnitTests {
             maxViewportWidth: 180,
             contentWidth: 320,
             horizontalPadding: 8,
-            leadingAccessoryWidth: 18,
-            trailingAccessoryWidth: 20
+            leadingAccessoryWidth: 18
         )
 
-        try expectEqual(layout.statusItemWidth, 234)
+        try expectEqual(layout.statusItemWidth, 214)
         try expectEqual(layout.textViewportMinX, 26)
         try expectEqual(layout.textViewportWidth, 180)
-    }
-
-    static func testMenuBarLayoutAddsTrailingAccessoryOnlyWhenPresent() throws {
-        let layout = MenuBarStatusItemLayout(
-            maxViewportWidth: 180,
-            contentWidth: 120,
-            horizontalPadding: 8,
-            leadingAccessoryWidth: 0,
-            trailingAccessoryWidth: 20
-        )
-
-        try expectEqual(layout.statusItemWidth, 156)
-        try expectEqual(layout.textViewportMinX, 8)
-        try expectEqual(layout.textViewportWidth, 120)
-    }
-
-    static func testMenuBarLayoutSupportsNoTrailingPaddingNextToArtwork() throws {
-        let layout = MenuBarStatusItemLayout(
-            maxViewportWidth: 180,
-            contentWidth: 120,
-            leadingPadding: 8,
-            trailingPadding: 0,
-            leadingAccessoryWidth: 0
-        )
-
-        try expectEqual(layout.statusItemWidth, 128)
-        try expectEqual(layout.textViewportMinX, 8)
-        try expectEqual(layout.textViewportWidth, 120)
     }
 
     static func testMenuBarDisplayTextUsesOriginalMode() throws {

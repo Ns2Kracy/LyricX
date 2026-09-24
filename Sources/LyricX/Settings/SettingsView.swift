@@ -143,8 +143,6 @@ struct SettingsView: View {
                 }
             }
             .pickerStyle(.segmented)
-
-            Toggle("Show track artwork", isOn: $model.showsMenuBarArtwork)
         }
     }
 

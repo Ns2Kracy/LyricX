@@ -70,29 +70,13 @@ extension LyricXUnitTests {
         try expectEqual(loaded, settings)
     }
 
-    static func testAppSettingsDefaultsToShowingMenuBarArtwork() throws {
-        try expectEqual(AppSettings.default.showsMenuBarArtwork, true)
-    }
-
-    static func testAppSettingsDecodesMenuBarArtworkDefaultFromOldJSON() throws {
-        let data = Data(#"{"showsLyrics":true,"showsTrackWhenLyricsMissing":false,"menuBarFrameRate":15}"#.utf8)
-
+    static func testAppSettingsIgnoresRemovedArtworkPreference() throws {
+        let data = Data(#"{"showsLyrics":false,"showsMenuBarArtwork":true}"#.utf8)
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+        let saved = try JSONEncoder().encode(settings)
 
-        try expectEqual(settings.showsMenuBarArtwork, true)
-    }
-
-    static func testAppSettingsStoreSavesMenuBarArtworkPreference() throws {
-        let url = temporaryFileURL(name: "menu-bar-artwork-settings.json")
-        let store = AppSettingsStore(fileURL: url)
-        var settings = AppSettings.default
-        settings.showsMenuBarArtwork = false
-
-        try store.save(settings)
-        let loaded = try store.load()
-
-        try? FileManager.default.removeItem(at: url)
-        try expectEqual(loaded.showsMenuBarArtwork, false)
+        try expectEqual(settings.showsLyrics, false)
+        try expectEqual(String(data: saved, encoding: .utf8)?.contains("showsMenuBarArtwork"), false)
     }
 
     @MainActor

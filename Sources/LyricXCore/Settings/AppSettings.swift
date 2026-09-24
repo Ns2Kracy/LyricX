@@ -73,7 +73,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var showsLyrics: Bool
     public var showsTrackWhenLyricsMissing: Bool
     public var menuBarFrameRate: MenuBarAnimationFrameRate
-    public var showsMenuBarArtwork: Bool
     public var translationEnabled: Bool
     public var translationTargetLanguage: TranslationLanguage
     public var japaneseRomajiEnabled: Bool
@@ -86,7 +85,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         showsLyrics: Bool = true,
         showsTrackWhenLyricsMissing: Bool = true,
         menuBarFrameRate: MenuBarAnimationFrameRate = .default,
-        showsMenuBarArtwork: Bool = true,
         translationEnabled: Bool = false,
         translationTargetLanguage: TranslationLanguage = .system,
         japaneseRomajiEnabled: Bool = false,
@@ -98,7 +96,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.showsLyrics = showsLyrics
         self.showsTrackWhenLyricsMissing = showsTrackWhenLyricsMissing
         self.menuBarFrameRate = menuBarFrameRate
-        self.showsMenuBarArtwork = showsMenuBarArtwork
         self.translationEnabled = translationEnabled
         self.translationTargetLanguage = translationTargetLanguage
         self.japaneseRomajiEnabled = japaneseRomajiEnabled
@@ -115,7 +112,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         showsLyrics = try container.decodeIfPresent(Bool.self, forKey: .showsLyrics) ?? defaults.showsLyrics
         showsTrackWhenLyricsMissing = try container.decodeIfPresent(Bool.self, forKey: .showsTrackWhenLyricsMissing) ?? defaults.showsTrackWhenLyricsMissing
         menuBarFrameRate = try container.decodeIfPresent(MenuBarAnimationFrameRate.self, forKey: .menuBarFrameRate) ?? defaults.menuBarFrameRate
-        showsMenuBarArtwork = try container.decodeIfPresent(Bool.self, forKey: .showsMenuBarArtwork) ?? defaults.showsMenuBarArtwork
         translationEnabled = try container.decodeIfPresent(Bool.self, forKey: .translationEnabled) ?? defaults.translationEnabled
         translationTargetLanguage = try container.decodeIfPresent(TranslationLanguage.self, forKey: .translationTargetLanguage) ?? defaults.translationTargetLanguage
         japaneseRomajiEnabled = try container.decodeIfPresent(Bool.self, forKey: .japaneseRomajiEnabled) ?? defaults.japaneseRomajiEnabled
@@ -131,7 +127,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case showsLyrics
         case showsTrackWhenLyricsMissing
         case menuBarFrameRate
-        case showsMenuBarArtwork
         case translationEnabled
         case translationTargetLanguage
         case japaneseRomajiEnabled

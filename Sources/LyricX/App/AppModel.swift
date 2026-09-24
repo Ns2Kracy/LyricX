@@ -97,14 +97,6 @@ final class AppModel {
         }
     }
 
-    var showsMenuBarArtwork: Bool {
-        get { settings.showsMenuBarArtwork }
-        set {
-            settings.showsMenuBarArtwork = newValue
-            persistSettings()
-        }
-    }
-
     var translationEnabled: Bool {
         get { settings.translationEnabled }
         set {
@@ -178,10 +170,6 @@ final class AppModel {
 
     var activeStylePreset: LyricStylePreset {
         stylePresets.first { $0.id == activeStylePresetID } ?? LyricStylePreset.defaults[0]
-    }
-
-    var menuBarArtwork: TrackArtwork? {
-        showsMenuBarArtwork ? artwork : nil
     }
 
     var menuBarSymbol: String {

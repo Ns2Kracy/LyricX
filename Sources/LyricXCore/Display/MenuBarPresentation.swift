@@ -39,50 +39,27 @@ public struct MenuBarStyle: Equatable, Sendable {
 public struct MenuBarStatusItemLayout: Equatable, Sendable {
     public var maxViewportWidth: Double
     public var contentWidth: Double
-    public var leadingPadding: Double
-    public var trailingPadding: Double
+    public var horizontalPadding: Double
     public var leadingAccessoryWidth: Double
-    public var trailingAccessoryWidth: Double
-
-    public init(
-        maxViewportWidth: Double,
-        contentWidth: Double,
-        leadingPadding: Double,
-        trailingPadding: Double,
-        leadingAccessoryWidth: Double,
-        trailingAccessoryWidth: Double = 0
-    ) {
-        self.maxViewportWidth = max(maxViewportWidth, 1)
-        self.contentWidth = max(contentWidth, 1)
-        self.leadingPadding = max(leadingPadding, 0)
-        self.trailingPadding = max(trailingPadding, 0)
-        self.leadingAccessoryWidth = max(leadingAccessoryWidth, 0)
-        self.trailingAccessoryWidth = max(trailingAccessoryWidth, 0)
-    }
 
     public init(
         maxViewportWidth: Double,
         contentWidth: Double,
         horizontalPadding: Double,
-        leadingAccessoryWidth: Double,
-        trailingAccessoryWidth: Double = 0
+        leadingAccessoryWidth: Double
     ) {
-        self.init(
-            maxViewportWidth: maxViewportWidth,
-            contentWidth: contentWidth,
-            leadingPadding: horizontalPadding,
-            trailingPadding: horizontalPadding,
-            leadingAccessoryWidth: leadingAccessoryWidth,
-            trailingAccessoryWidth: trailingAccessoryWidth
-        )
+        self.maxViewportWidth = max(maxViewportWidth, 1)
+        self.contentWidth = max(contentWidth, 1)
+        self.horizontalPadding = max(horizontalPadding, 0)
+        self.leadingAccessoryWidth = max(leadingAccessoryWidth, 0)
     }
 
     public var statusItemWidth: Double {
-        leadingPadding + leadingAccessoryWidth + textViewportWidth + trailingAccessoryWidth + trailingPadding
+        2 * horizontalPadding + leadingAccessoryWidth + textViewportWidth
     }
 
     public var textViewportMinX: Double {
-        leadingPadding + leadingAccessoryWidth
+        horizontalPadding + leadingAccessoryWidth
     }
 
     public var textViewportWidth: Double {

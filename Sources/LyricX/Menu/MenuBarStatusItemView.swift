@@ -13,7 +13,6 @@ final class MenuBarStatusItemView: NSControl {
         behavior: .staticText
     )
     private var date = Date()
-    private var isNextToArtwork = false
     private var clickFeedback = MenuBarClickFeedbackState()
     private var clickReleaseMonitors: [Any] = []
     private var cachedTextKey: AttributedTextKey?
@@ -35,11 +34,9 @@ final class MenuBarStatusItemView: NSControl {
 
     func update(
         presentation: MenuBarPresentation,
-        isNextToArtwork: Bool = false,
         date: Date
     ) {
         self.presentation = presentation
-        self.isNextToArtwork = isNextToArtwork
         self.date = date
         setAccessibilityLabel(presentation.accessibilityText)
         invalidateIntrinsicContentSize()
@@ -151,8 +148,7 @@ final class MenuBarStatusItemView: NSControl {
         MenuBarStatusItemLayout(
             maxViewportWidth: presentation.style.viewportWidth,
             contentWidth: contentWidth(for: presentation, attributedText: attributedText),
-            leadingPadding: Double(horizontalPadding),
-            trailingPadding: isNextToArtwork ? 0 : Double(horizontalPadding),
+            horizontalPadding: Double(horizontalPadding),
             leadingAccessoryWidth: presentation.symbol == nil ? 0 : Double(iconSize + iconSpacing)
         )
     }
