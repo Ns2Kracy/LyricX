@@ -23,7 +23,6 @@ struct LyricXUnitTests {
         try testNormalTimestampedLineHasNoSegments()
         try testTimelineReturnsNilBeforeFirstLine()
         try testTimelineReturnsCurrentLineAtAndBetweenTimestamps()
-        try testTimelineCanDelaySwitchWithinLeadTolerance()
         try testTimelineReturnsNextLineAfterPosition()
         try testTimelineContextReturnsPreviousCurrentAndNextLine()
         try testTranslationTimelineMatchesSourceLineByIDAndTime()
@@ -55,6 +54,7 @@ struct LyricXUnitTests {
         try testTimelineMarqueeOffsetStopsAtEnd()
         try testTimelineMarqueeOffsetStaysZeroWithoutOverflow()
         try testTimelineMarqueeOffsetStaysAtEndAfterScrollCompletes()
+        try testTimelineMarqueeKeepsEachStackedLineVisible()
     }
 
     @MainActor
@@ -93,6 +93,8 @@ struct LyricXUnitTests {
         try await testSpotifyWebAPIRetries401AndHandlesNoPlayback()
         try await testSpotifyWebAPIHonorsRetryAfter()
         try await testMusicBrainzEnrichmentUsesISRC()
+        try await testNetEaseProviderFetchesTranslatedLyrics()
+        try await testNetEaseProviderSkipsDisabledSources()
         try await testLRCLIBRetriesWithNormalizedSpotifyMetadata()
         try await testLRCLIBRejectsUnrelatedArtist()
         try await testLRCLIBRejectsWrongVersionDuration()

@@ -320,6 +320,75 @@ extension LyricXUnitTests {
         try expectEqual(request.value(forHTTPHeaderField: "User-Agent")?.hasPrefix("LyricX/"), true)
     }
 
+    static func testNetEaseProviderFetchesTranslatedLyrics() async throws {
+        let recorder = HTTPRequestRecorder()
+        let session = URLProtocolStub.makeSession { request in
+            recorder.append(request)
+            switch request.url?.path {
+            case "/api/search/get/web":
+                return .json(#"{"result":{"songs":[{"id":42,"name":"Song","artists":[{"name":"Artist"}],"duration":120000}]}}"#)
+            case "/api/song/lyric":
+                return .json(#"{"tlyric":{"version":1,"lyric":"[00:01.00]你好\n[00:02.00]我爱你"}}"#)
+            default:
+                return HTTPStubResponse(statusCode: 404)
+            }
+        }
+        defer { session.invalidateAndCancel() }
+
+        let provider = NetEaseTranslationProvider(baseURL: URL(string: "https://music.test")!, session: session)
+        let firstLine = LyricLine(time: 1, text: "君が好き")
+        let secondLine = LyricLine(time: 2, text: "愛してる")
+        let result = try require(
+            try await provider.translation(
+                for: PlaybackTrack(title: "Song", artist: "Artist", duration: 120),
+                sourceTimeline: LyricTimeline(lines: [firstLine, secondLine]),
+                targetLanguage: .simplifiedChinese,
+                options: LyricTranslationProviderOptions(netEaseEnabled: true)
+            ),
+            "NetEase should return its matched translated lyrics"
+        )
+
+        try expectEqual(result.providerKind, .netEaseCloudMusic)
+        try expectEqual(result.timeline.line(for: firstLine)?.translatedText, "你好")
+        try expectEqual(result.timeline.line(for: secondLine)?.translatedText, "我爱你")
+        try expectEqual(recorder.requests.count, 2)
+        let request = try require(recorder.requests.last, "NetEase lyric request should be recorded")
+        let components = try require(
+            request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) },
+            "NetEase lyric URL should be parseable"
+        )
+        try expectEqual(queryValue("id", in: components), "42")
+    }
+
+    static func testNetEaseProviderSkipsDisabledSources() async throws {
+        let recorder = HTTPRequestRecorder()
+        let session = URLProtocolStub.makeSession { request in
+            recorder.append(request)
+            return .json("{}")
+        }
+        defer { session.invalidateAndCancel() }
+
+        let provider = NetEaseTranslationProvider(baseURL: URL(string: "https://music.test")!, session: session)
+        let track = PlaybackTrack(title: "Song", artist: "Artist")
+        let timeline = LyricTimeline(lines: [LyricLine(time: 1, text: "Lyrics")])
+        let disabled = try await provider.translation(
+            for: track,
+            sourceTimeline: timeline,
+            targetLanguage: .simplifiedChinese,
+            options: LyricTranslationProviderOptions(netEaseEnabled: false)
+        )
+        let existingOnly = try await provider.translation(
+            for: track,
+            sourceTimeline: timeline,
+            targetLanguage: .simplifiedChinese,
+            options: LyricTranslationProviderOptions(sourceMode: .existingLyricsOnly, netEaseEnabled: true)
+        )
+
+        try expectNil(disabled)
+        try expectNil(existingOnly)
+        try expectEqual(recorder.requests.count, 0)
+    }
+
     static func testLRCLIBRetriesWithNormalizedSpotifyMetadata() async throws {
         let recorder = HTTPRequestRecorder()
         let session = URLProtocolStub.makeSession { request in

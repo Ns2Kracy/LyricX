@@ -130,7 +130,7 @@ extension LyricXUnitTests {
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
         try expectEqual(settings.translationSourceMode, .auto)
-        try expectEqual(settings.netEaseTranslationSourceEnabled, false)
+        try expectEqual(settings.netEaseTranslationSourceEnabled, true)
         try expectEqual(settings.qqMusicTranslationSourceEnabled, false)
     }
 
@@ -152,10 +152,10 @@ extension LyricXUnitTests {
     }
 
     static func testMenuBarLyricDisplayModeCodableRoundTrip() throws {
-        let encoded = try JSONEncoder().encode(MenuBarLyricDisplayMode.alternateOriginalTranslation)
+        let encoded = try JSONEncoder().encode(MenuBarLyricDisplayMode.originalAndTranslation)
         let decoded = try JSONDecoder().decode(MenuBarLyricDisplayMode.self, from: encoded)
 
-        try expectEqual(decoded, .alternateOriginalTranslation)
+        try expectEqual(decoded, .originalAndTranslation)
     }
 
     static func testTranslationLanguageCodableRoundTrip() throws {

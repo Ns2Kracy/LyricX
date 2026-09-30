@@ -26,6 +26,8 @@ public struct MenuBarLyricDisplayText: Equatable, Sendable {
             selected = source
         case .translation:
             selected = translation ?? source
+        case .originalAndTranslation:
+            selected = translation.map { "\(source)\n\($0)" } ?? source
         case .alternateOriginalTranslation:
             selected = useSecondary ? (translation ?? source) : source
         case .alternateOriginalRomaji:

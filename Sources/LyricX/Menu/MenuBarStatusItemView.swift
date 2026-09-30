@@ -175,7 +175,23 @@ final class MenuBarStatusItemView: NSControl {
         case .continuousMarquee(let contentWidth, let startedAt, let targetDuration):
             let marquee = MenuBarTimelineMarquee(viewportWidth: Double(rect.width))
             let offset = CGFloat(marquee.offset(elapsedTime: date.timeIntervalSince(startedAt), contentWidth: contentWidth, targetDuration: targetDuration))
-            text.draw(at: NSPoint(x: rect.minX + offset, y: rect.minY))
+            if text.string.contains("\n") {
+                let attributes = text.attributes(at: 0, effectiveRange: nil)
+                let lines = text.string.components(separatedBy: "\n").map {
+                    NSAttributedString(string: $0, attributes: attributes)
+                }
+                let lineHeight = text.size().height / CGFloat(lines.count)
+                for (index, line) in lines.enumerated() {
+                    let lineWidth = Double(line.size().width)
+                    let lineX = lineWidth < Double(rect.width)
+                        ? alignedTextX(for: line, in: rect)
+                        : rect.minX + CGFloat(marquee.clampedOffset(Double(offset), contentWidth: lineWidth))
+                    let lineY = rect.minY + CGFloat(lines.count - index - 1) * lineHeight
+                    line.draw(at: NSPoint(x: lineX, y: lineY))
+                }
+            } else {
+                text.draw(at: NSPoint(x: rect.minX + offset, y: rect.minY))
+            }
         case .staticText:
             text.draw(at: NSPoint(x: alignedTextX(for: text, in: rect), y: rect.minY))
         }
@@ -203,10 +219,13 @@ final class MenuBarStatusItemView: NSControl {
             return cachedAttributedText
         }
 
+        let fontSize = presentation.text.contains("\n")
+            ? min(presentation.style.fontSize, 9)
+            : presentation.style.fontSize
         let text = NSAttributedString(
             string: presentation.text,
             attributes: [
-                .font: NSFont.systemFont(ofSize: CGFloat(presentation.style.fontSize), weight: presentation.style.fontWeight.appKitWeight),
+                .font: NSFont.systemFont(ofSize: CGFloat(fontSize), weight: presentation.style.fontWeight.appKitWeight),
                 .foregroundColor: textColor()
             ]
         )

@@ -11,8 +11,6 @@ struct MenuBarContentView: View {
 
     var body: some View {
         nowPlayingPanel
-            .padding(12)
-            .frame(width: 320, height: 144)
     }
 
     private func boolBinding(_ keyPath: ReferenceWritableKeyPath<AppModel, Bool>) -> Binding<Bool> {
@@ -23,95 +21,91 @@ struct MenuBarContentView: View {
     }
 
     private var nowPlayingPanel: some View {
-        HStack(alignment: .top, spacing: 10) {
-            ArtworkView(
-                artwork: model.artwork,
-                fallbackTitle: model.playback.track?.album ?? "LyricX",
-                size: 120
-            )
-
-            VStack(alignment: .leading, spacing: 0) {
-                headerBlock
-                Spacer(minLength: 0)
-                playbackToolbar
-                Spacer(minLength: 0)
-                progressBlock
-            }
-            .frame(height: 120)
+        VStack(spacing: 0) {
+            headerBlock
+            Spacer(minLength: 18)
+            progressBlock
+            Spacer(minLength: 14)
+            playbackToolbar
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(18)
+        .frame(width: 356, height: 232)
     }
 
     private var headerBlock: some View {
-        HStack(alignment: .top, spacing: 4) {
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(alignment: .center, spacing: 16) {
+            ArtworkView(
+                artwork: model.artwork,
+                fallbackTitle: model.playback.track?.album ?? "LyricX",
+                size: 88
+            )
+
+            VStack(alignment: .leading, spacing: 6) {
                 Text(model.playback.track?.title ?? "No Spotify Track")
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
+                    .font(.title3.weight(.semibold))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(model.playback.track?.artist ?? model.playback.message ?? "Waiting for Spotify")
-                    .font(.caption2.weight(.semibold))
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 2)
             utilityMenu
+                .frame(width: 24, height: 88, alignment: .topTrailing)
         }
     }
 
-
-
-
     private var playbackToolbar: some View {
-        ZStack {
-            HStack(spacing: 0) {
-                Button {
-                    model.previousTrack()
-                } label: {
-                    Label("Previous Track", systemImage: "backward.fill")
-                        .labelStyle(.iconOnly)
-                        .font(.system(size: 16, weight: .medium))
-                }
-                .disabled(!canControlPlayback)
-                .help("Previous Track")
-                .frame(width: elapsedTimeColumnWidth, alignment: .trailing)
-
-                Spacer(minLength: 0)
-
-                Button {
-                    model.nextTrack()
-                } label: {
-                    Label("Next Track", systemImage: "forward.fill")
-                        .labelStyle(.iconOnly)
-                        .font(.system(size: 16, weight: .medium))
-                }
-                .disabled(!canControlPlayback)
-                .help("Next Track")
-                .frame(width: remainingTimeColumnWidth, alignment: .leading)
+        HStack(spacing: 22) {
+            transportButton("Previous Track", systemImage: "backward.fill") {
+                model.previousTrack()
             }
 
             Button {
                 model.playPause()
             } label: {
-                Label(playPauseTitle, systemImage: playPauseIcon)
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 23, weight: .semibold))
+                Image(systemName: playPauseIcon)
+                    .font(.system(size: 17, weight: .semibold))
             }
             .disabled(!canControlPlayback)
             .help(playPauseTitle)
-            .frame(width: 32, alignment: .center)
+            .accessibilityLabel(playPauseTitle)
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.circle)
+            .controlSize(.large)
+
+            transportButton("Next Track", systemImage: "forward.fill") {
+                model.nextTrack()
+            }
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
         .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private func transportButton(
+        _ title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .semibold))
+        }
+        .disabled(!canControlPlayback)
+        .help(title)
+        .accessibilityLabel(title)
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.circle)
+        .controlSize(.large)
     }
 
     private var progressBlock: some View {
         VStack(spacing: 4) {
             ProgressView(value: progressValue)
                 .progressViewStyle(.linear)
-                .controlSize(.mini)
+                .controlSize(.small)
 
             HStack {
                 Text(formatTime(model.playback.position))

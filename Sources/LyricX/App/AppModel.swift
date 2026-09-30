@@ -269,7 +269,9 @@ final class AppModel {
             repository: "LyricX",
             currentVersion: AppModel.currentAppVersion()
         ),
-        translationService: any LyricTranslationService = ProviderChainLyricTranslationService(),
+        translationService: any LyricTranslationService = ProviderChainLyricTranslationService(
+            providers: [NetEaseTranslationProvider()]
+        ),
         translationCache: LyricTranslationCache = LyricTranslationCache(),
         startsPolling: Bool = true
     ) {

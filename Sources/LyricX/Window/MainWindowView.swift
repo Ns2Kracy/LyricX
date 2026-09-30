@@ -169,7 +169,6 @@ struct MainWindowView: View {
             if let romaji = model.currentTranslationLine?.romajiText {
                 LyricContextRow(label: "Romaji", text: romaji, prominence: .secondary)
             }
-            LyricContextRow(label: "Translation Status", text: model.translationStatus.label, prominence: .secondary)
             LyricContextRow(label: "Next", text: model.nextLine?.text ?? "No next line", prominence: .secondary)
         }
         .padding(24)

@@ -73,25 +73,15 @@ extension LyricXUnitTests {
             LyricLine(time: 20.0, text: "Second")
         ])
 
-        try expectEqual(timeline.currentLine(at: 10.0), LyricLine(time: 10.0, text: "First"))
-        try expectEqual(timeline.currentLine(at: 19.9), LyricLine(time: 10.0, text: "First"))
-        try expectEqual(timeline.currentLine(at: 20.0), LyricLine(time: 20.0, text: "Second"))
-    }
-
-    static func testTimelineCanDelaySwitchWithinLeadTolerance() throws {
-        let timeline = LyricTimeline(lines: [
-            LyricLine(time: 10.0, text: "First"),
-            LyricLine(time: 20.0, text: "Second")
-        ])
-
-        try expectEqual(
-            timeline.currentLine(at: 20.08, switchLeadTolerance: 0.12),
-            LyricLine(time: 10.0, text: "First")
-        )
-        try expectEqual(
-            timeline.currentLine(at: 20.12, switchLeadTolerance: 0.12),
-            LyricLine(time: 20.0, text: "Second")
-        )
+        let first = LyricLine(time: 10.0, text: "First")
+        let second = LyricLine(time: 20.0, text: "Second")
+        try expectNil(timeline.currentLine(at: 9.999))
+        try expectEqual(timeline.currentLine(at: 10.0), first)
+        try expectEqual(timeline.currentLine(at: 19.999), first)
+        try expectEqual(timeline.currentLine(at: 20.0), second)
+        try expectEqual(timeline.currentLine(at: 20.001), second)
+        try expectEqual(timeline.context(at: 19.999).nextLine, second)
+        try expectEqual(timeline.context(at: 20.0).previousLine, first)
     }
 
     static func testTimelineReturnsNextLineAfterPosition() throws {
@@ -344,6 +334,15 @@ extension LyricXUnitTests {
         let marquee = MenuBarTimelineMarquee(viewportWidth: 220, gap: 36, speed: 34, startPause: 0.8)
 
         try expectEqual(marquee.offset(elapsedTime: 10, contentWidth: 320), -100)
+    }
+
+    static func testTimelineMarqueeKeepsEachStackedLineVisible() throws {
+        let marquee = MenuBarTimelineMarquee(viewportWidth: 220)
+        let sourceOffset = marquee.offset(elapsedTime: 10, contentWidth: 320)
+
+        try expectEqual(marquee.clampedOffset(sourceOffset, contentWidth: 320), -100)
+        try expectEqual(marquee.clampedOffset(sourceOffset, contentWidth: 100), 0)
+        try expectEqual(marquee.clampedOffset(sourceOffset, contentWidth: 250), -30)
     }
 
     static func testTimelineMarqueeOffsetStaysZeroWithoutOverflow() throws {

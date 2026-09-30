@@ -31,6 +31,7 @@ public enum TranslationLanguage: String, CaseIterable, Codable, Equatable, Ident
 public enum MenuBarLyricDisplayMode: String, CaseIterable, Codable, Equatable, Identifiable, Sendable {
     case original
     case translation
+    case originalAndTranslation
     case alternateOriginalTranslation
     case alternateOriginalRomaji
 
@@ -42,6 +43,8 @@ public enum MenuBarLyricDisplayMode: String, CaseIterable, Codable, Equatable, I
             return "Original"
         case .translation:
             return "Translation"
+        case .originalAndTranslation:
+            return "Original + Translation (Stacked)"
         case .alternateOriginalTranslation:
             return "Original / Translation"
         case .alternateOriginalRomaji:
@@ -90,7 +93,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         japaneseRomajiEnabled: Bool = false,
         menuBarLyricDisplayMode: MenuBarLyricDisplayMode = .original,
         translationSourceMode: TranslationSourceMode = .auto,
-        netEaseTranslationSourceEnabled: Bool = false,
+        netEaseTranslationSourceEnabled: Bool = true,
         qqMusicTranslationSourceEnabled: Bool = false
     ) {
         self.showsLyrics = showsLyrics

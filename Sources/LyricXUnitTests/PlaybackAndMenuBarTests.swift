@@ -90,14 +90,24 @@ extension LyricXUnitTests {
         let track = PlaybackTrack(title: "Song", artist: "Artist", duration: 120)
         model.timeline = LyricTimeline(lines: [first, second])
 
-        // The next line's timestamp is the exact switch boundary for every lyric surface.
-        model.playback = PlaybackSnapshot(state: .paused, track: track, position: second.time - 0.001)
-        try expectEqual(model.lyricContext().currentLine, first)
-        try expectEqual(model.menuBarPresentation().text, first.text)
-
-        model.playback = PlaybackSnapshot(state: .paused, track: track, position: second.time)
-        try expectEqual(model.lyricContext().currentLine, second)
-        try expectEqual(model.menuBarPresentation().text, second.text)
+        // The displayed line must change at the timestamp, including after a backward seek.
+        for (position, expected, next) in [
+            (9.999, nil, first),
+            (10.0, first, second),
+            (19.999, first, second),
+            (20.0, second, nil),
+            (20.001, second, nil),
+            (19.999, first, second)
+        ] as [(TimeInterval, LyricLine?, LyricLine?)] {
+            model.playback = PlaybackSnapshot(state: .paused, track: track, position: position)
+            model.refreshLyricContext()
+            try expectEqual(model.currentLine, expected)
+            try expectEqual(model.nextLine, next)
+            try expectEqual(model.lyricContext().currentLine, expected)
+            if let expected {
+                try expectEqual(model.menuBarPresentation().text, expected.text)
+            }
+        }
     }
 
     @MainActor
@@ -226,9 +236,24 @@ extension LyricXUnitTests {
         let translation = LyricTranslationLine(sourceLineID: source.id, time: 10, translatedText: "I love you", romajiText: nil)
 
         let text = MenuBarLyricDisplayText.resolve(sourceLine: source, translationLine: translation, mode: .translation, lineProgress: 0.25)
+        let stacked = MenuBarLyricDisplayText.resolve(
+            sourceLine: source,
+            translationLine: translation,
+            mode: .originalAndTranslation,
+            lineProgress: 0.25
+        )
+        let stackedWithoutTranslation = MenuBarLyricDisplayText.resolve(
+            sourceLine: source,
+            translationLine: nil,
+            mode: .originalAndTranslation,
+            lineProgress: 0.25
+        )
 
         try expectEqual(text.text, "I love you")
         try expectEqual(text.accessibilityText, "I love you")
+        try expectEqual(stacked.text, "君が好き\nI love you")
+        try expectEqual(stacked.accessibilityText, "君が好き\nI love you")
+        try expectEqual(stackedWithoutTranslation.text, "君が好き")
     }
 
     static func testMenuBarDisplayTextAlternatesOriginalThenTranslation() throws {

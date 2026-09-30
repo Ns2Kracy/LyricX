@@ -39,6 +39,10 @@ public struct MenuBarTimelineMarquee: Equatable, Sendable {
         return TimeInterval(travel / speed)
     }
 
+    public func clampedOffset(_ offset: Double, contentWidth: Double) -> Double {
+        max(offset, min(viewportWidth - contentWidth, 0))
+    }
+
     public func offset(elapsedTime: TimeInterval, contentWidth: Double, targetDuration: TimeInterval? = nil) -> Double {
         guard contentWidth > viewportWidth else {
             return 0

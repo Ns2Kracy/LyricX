@@ -16,8 +16,12 @@ final class MenuBarTextMetrics {
             widths.removeAll(keepingCapacity: true)
         }
 
-        let font = NSFont.systemFont(ofSize: CGFloat(style.fontSize), weight: style.fontWeight.appKitWeight)
-        let width = (text as NSString).size(withAttributes: [.font: font]).width
+        let fontSize = text.contains("\n") ? min(style.fontSize, 9) : style.fontSize
+        let font = NSFont.systemFont(ofSize: CGFloat(fontSize), weight: style.fontWeight.appKitWeight)
+        let width = text
+            .components(separatedBy: "\n")
+            .map { ($0 as NSString).size(withAttributes: [.font: font]).width }
+            .max() ?? 0
         widths[key] = width
         return width
     }

@@ -121,15 +121,10 @@ struct SettingsView: View {
             .disabled(!model.translationEnabled)
 
             Toggle("NetEase Cloud Music", isOn: $model.netEaseTranslationSourceEnabled)
-                .disabled(true)
             Toggle("QQ Music", isOn: $model.qqMusicTranslationSourceEnabled)
                 .disabled(true)
 
-            Text("NetEase and QQ Music sources are visible for the Chinese-lyrics roadmap but disabled until their APIs are implemented.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Text(model.translationStatus.label)
+            Text("NetEase Cloud Music is the supported translation source. QQ Music translation is not available yet.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
